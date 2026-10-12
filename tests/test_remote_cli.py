@@ -141,3 +141,64 @@ def test_remote_cli_roundtrip(tmp_path):
     finally:
         server.terminate()
         server.wait(timeout=10)
+
+
+def test_remote_oauth_default_and_explicit_legacy(tmp_path, monkeypatch):
+    from kataster_mcp.cli import parser
+    from kataster_mcp import remote_client
+    from kataster_mcp.envelope import Envelope
+
+    monkeypatch.delenv("SK_KATASTER_TOKEN", raising=False)
+    calls = []
+    monkeypatch.setattr(
+        remote_client.cli_auth,
+        "access_token",
+        lambda path, resource: calls.append((path, resource)) or "synthetic-oauth",
+    )
+
+    async def request(args, headers):
+        return Envelope().ok({"authorization": headers["Authorization"]})
+
+    monkeypatch.setattr(remote_client, "mcp_request", request)
+    args = parser().parse_args(
+        ["remote", "--auth-file", str(tmp_path / "auth.json"), "tools"]
+    )
+    assert args.token_file is None
+    assert (
+        remote_client.execute(args)["data"]["authorization"] == "Bearer synthetic-oauth"
+    )
+    assert len(calls) == 1
+    key = tmp_path / "legacy.token"
+    key.write_text("synthetic-legacy")
+    args = parser().parse_args(["remote", "--token-file", str(key), "tools"])
+    assert (
+        remote_client.execute(args)["data"]["authorization"]
+        == "Bearer synthetic-legacy"
+    )
+    monkeypatch.setenv("SK_KATASTER_TOKEN", "synthetic-env")
+    assert (
+        remote_client.execute(args)["data"]["authorization"] == "Bearer synthetic-env"
+    )
+    assert len(calls) == 1
+
+
+def test_remote_status_json_outside_checkout(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "kataster_mcp.cli",
+            "--json",
+            "remote",
+            "--auth-file",
+            str(tmp_path / "oauth.json"),
+            "status",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["data"]["authenticated"] is False
+    assert not result.stderr

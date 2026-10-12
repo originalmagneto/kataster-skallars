@@ -13,6 +13,7 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
 from .envelope import Envelope, KatasterError
+from . import cli_auth
 
 
 def add_parser(commands) -> None:
@@ -28,10 +29,15 @@ def add_parser(commands) -> None:
     remote.add_argument(
         "--token-file",
         type=Path,
-        default=Path.home() / ".config/kataster-skallars/remote.token",
+        default=None,
     )
+    remote.add_argument("--auth-file", type=Path, default=cli_auth.DEFAULT_AUTH_FILE)
+    remote.add_argument("--no-browser", action="store_true")
     actions = remote.add_subparsers(dest="action", required=True)
     actions.add_parser("doctor")
+    actions.add_parser("login")
+    actions.add_parser("status")
+    actions.add_parser("logout")
     actions.add_parser("upload").add_argument("path", type=Path)
     actions.add_parser("tools").add_argument("name", nargs="?")
     call = actions.add_parser("call")
@@ -74,16 +80,38 @@ async def mcp_request(args: argparse.Namespace, headers: dict[str, str]) -> dict
 
 def execute(args: argparse.Namespace) -> dict:
     url = urlsplit(args.url)
+    if url.username or url.password or url.query or url.fragment or not url.hostname:
+        raise KatasterError(
+            "invalid_input",
+            "Remote URL nesmie obsahovať poverenia, query ani fragment.",
+        )
     if url.scheme != "https" and not (
         url.scheme == "http" and url.hostname in ("127.0.0.1", "localhost")
     ):
         raise KatasterError("invalid_input", "Remote URL vyžaduje HTTPS.")
-    token = (
-        os.environ.get("SK_KATASTER_TOKEN")
-        or args.token_file.read_text(encoding="utf-8").strip()
-    )
-    headers = {"Authorization": f"Bearer {token}"}
+    resource = args.url.rstrip("/") + "/mcp"
+    auth_file = getattr(args, "auth_file", cli_auth.DEFAULT_AUTH_FILE)
     try:
+        if args.action in ("login", "status", "logout"):
+            if args.action == "login":
+                data = cli_auth.login(
+                    auth_file, resource, getattr(args, "no_browser", False)
+                )
+            elif args.action == "status":
+                data = cli_auth.status(auth_file, resource)
+            else:
+                data = cli_auth.logout(auth_file, resource)
+            return Envelope().ok(data)
+        headers = {}
+        if args.action != "doctor":
+            token = os.environ.get("SK_KATASTER_TOKEN")
+            if not token and args.token_file is not None:
+                token = args.token_file.read_text(encoding="utf-8").strip()
+            if not token:
+                token = cli_auth.access_token(auth_file, resource)
+            if not token or any(ord(c) < 33 or ord(c) > 126 for c in token):
+                raise KatasterError("invalid_input", "Neplatný bearer token.")
+            headers = {"Authorization": f"Bearer {token}"}
         if args.action in ("tools", "call"):
             return asyncio.run(mcp_request(args, headers))
         with httpx.Client(timeout=125, follow_redirects=False) as client:
