@@ -27,7 +27,11 @@ def request(
         url,
         data=raw,
         method=method,
-        headers={"Content-Type": "application/json", **(headers or {})},
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "SKALLARS-Release/1.0",
+            **(headers or {}),
+        },
     )
     try:
         try:

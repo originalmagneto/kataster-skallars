@@ -245,6 +245,20 @@ class PromotionTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Health alebo discovery"):
                 release.smoke(manifest, timeout=0)
 
+    def test_request_declares_user_agent_and_preserves_override(self):
+        for headers, expected in (
+            (None, "SKALLARS-Release/1.0"),
+            ({"User-Agent": "synthetic-caller/1.0"}, "synthetic-caller/1.0"),
+        ):
+            with patch.object(
+                release.urllib.request, "urlopen", side_effect=OSError()
+            ) as open_request:
+                with self.assertRaises(RuntimeError):
+                    release.request("https://example.com/endpoint", headers=headers)
+                self.assertEqual(
+                    open_request.call_args.args[0].get_header("User-agent"), expected
+                )
+
     def test_sanitized_network_failure(self):
         with patch.object(
             release.urllib.request,
