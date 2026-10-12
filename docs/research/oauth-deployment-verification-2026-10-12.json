@@ -1,0 +1,91 @@
+{
+  "checked_at_utc": "2026-10-12T17:37:04.959770+00:00",
+  "auth_code_revision": "b9fff092c51e4deb10872fd9b7e7e431ef676e56",
+  "kataster_code_revision": "1833457c7de07cfd1c78340e47dbf1a847b93d69",
+  "auth_compose_id": "c9xkbD7L-nooXbqJW1PlI",
+  "kataster_compose_id": "hR1vGslIGKJEntXc667AS",
+  "auth_tests": 10,
+  "kataster_tests": 154,
+  "auth_ci_runs": [
+    38281788267,
+    38282259726
+  ],
+  "kataster_ci_run": 38282264211,
+  "personal_activation_completed": true,
+  "used_activation_rejected": true,
+  "codex_oauth_login_succeeded": true,
+  "claude_oauth_login_succeeded": true,
+  "claude_connected_after_auth_restart_and_readiness": true,
+  "existing_bearer_status_succeeded": true,
+  "live_model_initiated_oauth_tool_call": "not_verified: model-account authentication blocked CLI probes",
+  "safari_local_oauth_flow": "passed",
+  "safari_production_check": "unavailable: Transport closed",
+  "live_cadastral_provider_requests": false,
+  "auto_deploy": false,
+  "legacy_cli_bearer_enabled": true,
+  "auth_health": {
+    "http_status": 200,
+    "body": {
+      "status": "ok",
+      "version": "0.1.0",
+      "revision": "b9fff092c51e4deb10872fd9b7e7e431ef676e56"
+    }
+  },
+  "kataster_health": {
+    "http_status": 200,
+    "body": {
+      "status": "ok",
+      "version": "0.5.0",
+      "revision": "1833457c7de07cfd1c78340e47dbf1a847b93d69"
+    }
+  },
+  "resource_metadata": {
+    "http_status": 200,
+    "body": {
+      "resource": "https://mcp-kataster.aittorney.online/mcp",
+      "authorization_servers": [
+        "https://auth.aittorney.online"
+      ],
+      "scopes_supported": [
+        "mcp:tools"
+      ],
+      "bearer_methods_supported": [
+        "header"
+      ],
+      "resource_name": "Kataster SKALLARS"
+    }
+  },
+  "authorization_metadata": {
+    "http_status": 200,
+    "body": {
+      "issuer": "https://auth.aittorney.online",
+      "authorization_endpoint": "https://auth.aittorney.online/auth",
+      "token_endpoint": "https://auth.aittorney.online/token",
+      "registration_endpoint": "https://auth.aittorney.online/reg",
+      "revocation_endpoint": "https://auth.aittorney.online/token/revocation",
+      "jwks_uri": "https://auth.aittorney.online/jwks",
+      "response_types_supported": [
+        "code"
+      ],
+      "grant_types_supported": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "token_endpoint_auth_methods_supported": [
+        "none"
+      ],
+      "code_challenge_methods_supported": [
+        "S256"
+      ],
+      "scopes_supported": [
+        "openid",
+        "offline_access",
+        "mcp:tools"
+      ]
+    }
+  },
+  "unauthenticated": {
+    "http_status": 401,
+    "challenge": "Bearer realm=\"kataster\", resource_metadata=\"https://mcp-kataster.aittorney.online/.well-known/oauth-protected-resource/mcp\""
+  }
+}
