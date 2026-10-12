@@ -145,6 +145,7 @@ class Remote:
         self.shared = Cache(data_dir / "shared" / "cache.sqlite", private=True)
         self.quota = Quota(self.shared.db)
         self.lock = asyncio.Lock()
+        self.pending = 0
         self.servers, self.apps = {}, {}
         for tenant in {r["tenant"] for r in read_tokens(token_file)}:
             directory = data_dir / "users" / tenant
@@ -295,7 +296,7 @@ class Remote:
             )(scope, receive, send)
         scope["tenant"] = tenant
         # shortcut: one replica serializes requests; use a shared queue before scaling.
-        if self.lock.locked():
+        if self.pending >= 8:
             return await JSONResponse(
                 {"error": "Server busy, retry shortly"},
                 429,
@@ -322,15 +323,18 @@ class Remote:
                     }
             await send(message)
 
-        async with self.lock:
-            target = self.apps[tenant] if scope["path"] == "/mcp" else self.app
-            try:
-                async with asyncio.timeout(120):
+        self.pending += 1
+        try:
+            async with asyncio.timeout(120):
+                async with self.lock:
+                    target = self.apps[tenant] if scope["path"] == "/mcp" else self.app
                     await target(scope, receive, private_send)
-            except TimeoutError:
-                return await JSONResponse({"error": "Request timeout"}, 504)(
-                    scope, receive, send
-                )
+        except TimeoutError:
+            return await JSONResponse({"error": "Request timeout"}, 504)(
+                scope, receive, send
+            )
+        finally:
+            self.pending -= 1
 
 
 def create_app(data_dir: Path, token_file: Path, origin: str) -> Remote:

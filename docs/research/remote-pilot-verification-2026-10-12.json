@@ -1,0 +1,13 @@
+{
+  "checked_at": "2026-10-12T15:49:35Z",
+  "endpoint": "https://mcp-kataster.aittorney.online/mcp",
+  "version": "0.4.0",
+  "revision": "a2a19d88967c69b01054bfd199a7a79dbc11be56",
+  "tls_verified": true,
+  "unauthenticated_status": 401,
+  "synthetic_upload_import": true,
+  "cross_user_file_rejected": true,
+  "cross_user_overview_empty": true,
+  "server_path_rejected": true,
+  "live_portal_calls": false
+}

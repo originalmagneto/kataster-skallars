@@ -230,3 +230,25 @@ def test_revoked_tenant_data_still_expires(tmp_path):
                 break
             time.sleep(0.01)
         assert count == 0
+
+
+def test_parallel_harness_discovery_waits_instead_of_failing(remote):
+    import asyncio
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    client, _ = remote
+    entered = threading.Event()
+
+    @client.app.servers["alice"].tool()
+    async def slow_probe() -> dict:
+        entered.set()
+        await asyncio.sleep(0.3)
+        return {"ok": True}
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(call, client, "slow_probe", {})
+        assert entered.wait(3)
+        second = pool.submit(call, client, "kataster_status", {})
+        assert not first.result().get("isError")
+        assert not second.result().get("isError")
