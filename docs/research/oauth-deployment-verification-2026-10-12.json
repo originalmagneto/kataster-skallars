@@ -19,7 +19,7 @@
   "existing_bearer_status_succeeded": true,
   "live_model_initiated_oauth_tool_call": "not_verified: model-account authentication blocked CLI probes",
   "safari_local_oauth_flow": "passed",
-  "safari_production_check": "unavailable: Transport closed",
+  "safari_production_check": "passed after transport recovered: rendered login form, username/password autocomplete, empty warning/error console, no failed network requests",
   "live_cadastral_provider_requests": false,
   "auto_deploy": false,
   "legacy_cli_bearer_enabled": true,

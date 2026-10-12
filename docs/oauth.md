@@ -32,7 +32,7 @@ Pôvodný osobný bearer zostáva v serverovom pilote pre existujúci `sk-katast
 - Osobné nastavenie hesla a následné odmietnutie použitého aktivačného odkazu.
 - Skutočný Codex a Claude Code OAuth callback a uloženie tokenov. Claude Code v novom procese hlásil Connected aj po reštarte autority a obnovení readiness.
 - 154 offline testov Katastra a jeho CI v šiestich kombináciách OS/Python; 10 testov autority, audit závislostí bez nálezov a Docker build/CI.
-- Safari lokálne overil skutočné prihlásenie, súhlas, PKCE callback a obnovovací token. Živú obrazovku používateľ absolvoval cez prehliadač; neskoršia kontrola produkcie cez Safari MCP bola nedostupná, nástroj vrátil Transport closed.
+- Safari lokálne overil skutočné prihlásenie, súhlas, PKCE callback a obnovovací token. Živú obrazovku používateľ absolvoval cez prehliadač; po obnovení Safari MCP prešla aj kontrola živého prihlasovacieho formulára, autocomplete, konzoly a siete bez chýb. Screenshot je v ignorovanom design/login-production.png autority.
 
 Samostatné modelové CLI skúšky sa zastavili na existujúcich prihláseniach do OpenAI/Anthropic. Ide o prihlásenie modelového klienta, osobitné od úspešnej MCP OAuth autentifikácie. Živé modelom iniciované kataster_status cez OAuth tak ešte nie je potvrdené; pôvodný bearer status v produkcii prešiel. Prirodzený výber skillu, webové harnesses s ďalšími callbackmi, marketplace/plugin balíky a migrácia ostatných MCP zostávajú samostatnými etapami. Neboli volané živé cadastral/LV rozhrania.
 
