@@ -163,14 +163,26 @@ def promote(git, source, image, service, origin, trigger, smoke):
     if git.ref("main") != source:
         print("Staršie main vydanie preskočené.")
         return False
-    git.update(commit)
     try:
+        git.update(commit)
         trigger(commit)
         smoke(manifest)
     except Exception:
         try:
-            if git.ref(BRANCH) != commit:
-                raise RuntimeError()
+            current = git.ref(BRANCH)
+        except Exception:
+            raise RuntimeError(
+                "Stav production ref je neznámy; vyžaduje sa zásah správcu."
+            ) from None
+        if current == parent:
+            raise RuntimeError(
+                "Vydanie zlyhalo; production ref zostal pôvodný."
+            ) from None
+        if current != commit:
+            raise RuntimeError(
+                "Production ref zmenil iný aktér; vyžaduje sa zásah správcu."
+            ) from None
+        try:
             rollback = git.commit(
                 parent, commit, {}, "Rollback " + source + " to " + previous["source"]
             )
@@ -224,10 +236,9 @@ def smoke(manifest, timeout=360):
             _, body = request(origin + path)
             metadata = json.loads(body)
             if service == "kataster":
-                if (
-                    metadata["resource"] != origin + "/mcp"
-                    or not metadata["authorization_servers"]
-                ):
+                if metadata["resource"] != origin + "/mcp" or metadata[
+                    "authorization_servers"
+                ] != ["https://auth.aittorney.online"]:
                     raise ValueError()
                 status, _ = request(
                     origin + "/mcp",

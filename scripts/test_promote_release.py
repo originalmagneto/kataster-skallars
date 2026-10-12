@@ -111,6 +111,94 @@ class PromotionTests(unittest.TestCase):
             )
         self.assertEqual(git.calls, [])
 
+    def test_second_main_check_skips_prepared_candidate(self):
+        git = Git()
+        original = git.commit
+
+        def commit(*args):
+            result = original(*args)
+            git.stale = True
+            return result
+
+        git.commit = commit
+        self.assertFalse(
+            release.promote(
+                git,
+                SHA,
+                DIGEST,
+                "kataster",
+                "https://mcp-kataster.aittorney.online",
+                lambda sha: self.fail("trigger"),
+                lambda manifest: self.fail("smoke"),
+            )
+        )
+        self.assertEqual([call[0] for call in git.calls], ["commit"])
+
+    def test_ambiguous_update_reconciles_candidate_parent_and_other_actor(self):
+        for state in ("candidate", "parent", "other", "unreadable"):
+            git = Git()
+            original_update, original_ref = git.update, git.ref
+            triggers = []
+
+            def update(sha):
+                if not any(call[0] == "update" for call in git.calls):
+                    if state == "candidate":
+                        original_update(sha)
+                    elif state == "other":
+                        git.production = "9" * 40
+                    if state == "unreadable":
+                        git.ref = lambda name: (_ for _ in ()).throw(
+                            TimeoutError("secret")
+                        )
+                    raise TimeoutError("secret")
+                original_update(sha)
+
+            git.update = update
+            with self.assertRaises(RuntimeError) as error:
+                release.promote(
+                    git,
+                    SHA,
+                    DIGEST,
+                    "kataster",
+                    "https://mcp-kataster.aittorney.online",
+                    triggers.append,
+                    lambda manifest: None,
+                )
+            self.assertNotIn("secret", str(error.exception))
+            self.assertEqual(len(triggers), 1 if state == "candidate" else 0)
+            if state == "candidate":
+                self.assertEqual(git.calls[2][1:3], ("f" * 40, git.calls[1][1]))
+            else:
+                self.assertEqual([call[0] for call in git.calls], ["commit"])
+
+    def test_wrong_authority_is_rejected(self):
+        manifest = {
+            "source": SHA,
+            "service": "kataster",
+            "origin": "https://mcp-kataster.aittorney.online",
+        }
+        for authorities in (
+            ["https://wrong.example"],
+            "https://auth.aittorney.online",
+            ["https://auth.aittorney.online", "https://wrong.example"],
+        ):
+            responses = [
+                (200, release.json.dumps({"revision": SHA}).encode()),
+                (
+                    200,
+                    release.json.dumps(
+                        {
+                            "resource": manifest["origin"] + "/mcp",
+                            "authorization_servers": authorities,
+                        }
+                    ).encode(),
+                ),
+            ]
+            with patch.object(release, "request", side_effect=responses) as request:
+                with self.assertRaisesRegex(RuntimeError, "Health alebo discovery"):
+                    release.smoke(manifest, timeout=0)
+                self.assertEqual(request.call_count, 2)
+
     def test_github_uses_tree_sha_linear_parent_and_non_force_ref(self):
         git = release.GitHub("synthetic/repo", "synthetic-token")
         calls = []

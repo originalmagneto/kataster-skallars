@@ -214,3 +214,98 @@ def test_restore_does_not_reset_provider_quota_or_block(tmp_path, keys):
     http.blocks = restored
     assert http.blocked_until() > __import__("time").time()
     restored.db.close()
+
+
+def test_windows_paths_are_rejected_before_publication(tmp_path, keys):
+    unsafe = [
+        "C:/outside/file",
+        "C:outside",
+        "//server/share/file",
+        "\\outside",
+        "file:stream",
+        "dir/CON.txt",
+        "dir/CON .txt",
+        "dir/LPT1",
+        "dir/trailing.",
+        "dir/trailing ",
+        "dir/a?b",
+    ]
+    for name in unsafe:
+        raw = b"synthetic"
+        from kataster_mcp.backup import canonical, digest, encoded
+
+        content = {
+            "format": "skallars-restore-v1",
+            "service": "kataster",
+            "createdAt": "synthetic",
+            "revision": "unknown",
+            "config": {},
+            "files": {name: encoded(raw)},
+            "manifest": {
+                "configSha256": digest(canonical({})),
+                "files": {name: digest(raw)},
+            },
+        }
+        backup = tmp_path / "unsafe.enc.json"
+        backup.write_text(json.dumps(seal(content, keys[1])))
+        with pytest.raises(ValueError):
+            restore(backup, keys[0], tmp_path / "restore")
+        assert not (tmp_path / "restore").exists()
+        assert not list(tmp_path.glob(".kataster-restore-*"))
+
+
+def test_sqlite_wal_limit_and_persistent_staging(tmp_path, keys, monkeypatch):
+    import kataster_mcp.backup as backup
+
+    source = tmp_path / "source"
+    source.mkdir()
+    db = sqlite3.connect(source / "large.sqlite")
+    db.execute("PRAGMA journal_mode=WAL")
+    db.execute("PRAGMA wal_autocheckpoint=0")
+    db.execute("CREATE TABLE payload (value BLOB)")
+    db.execute("INSERT INTO payload VALUES (?)", (b"x" * 32768,))
+    db.commit()
+    assert (source / "large.sqlite").stat().st_size < 8192
+    monkeypatch.setattr(backup, "MAX_BYTES", 8192)
+    with pytest.raises(ValueError):
+        snapshot(source, keys[1], source / "snapshots")
+    assert not list((source / "snapshots").glob("*.enc.json"))
+    monkeypatch.setattr(backup, "MAX_BYTES", 1024 * 1024)
+    original = backup.tempfile.TemporaryDirectory
+    locations = []
+
+    def staging(*args, **kwargs):
+        locations.append(kwargs.get("dir"))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(backup.tempfile, "TemporaryDirectory", staging)
+    result = snapshot(source, keys[1], source / "snapshots")
+    assert locations == [(source / "snapshots").resolve()]
+    restore(Path(result["output"]), keys[0], tmp_path / "restored")
+    assert not (tmp_path / "restored" / "snapshots").exists()
+    db.close()
+
+
+def test_sqlite_progress_rejects_growth_before_read(tmp_path, keys, monkeypatch):
+    from unittest.mock import Mock
+    import kataster_mcp.backup as backup
+
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "quota.sqlite").write_bytes(b"synthetic")
+    db, copied = Mock(), Mock()
+    db.execute.return_value.fetchone.side_effect = [(4096,), (1,)]
+    progress_calls = []
+
+    def grows(destination, *, pages, progress):
+        progress_calls.append(pages)
+        progress(0, 0, 3)
+
+    db.backup.side_effect = grows
+    monkeypatch.setattr(backup.sqlite3, "connect", Mock(side_effect=[db, copied]))
+    monkeypatch.setattr(backup, "MAX_BYTES", 8192)
+    with pytest.raises(ValueError, match="SQLite"):
+        snapshot(source, keys[1], tmp_path / "snapshots")
+    assert progress_calls and not list((tmp_path / "snapshots").iterdir())
+    db.close.assert_called_once()
+    copied.close.assert_called_once()

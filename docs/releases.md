@@ -29,7 +29,9 @@ Kataster MCP schema a stdio handshake sú offline regresie. OAuth business smoke
 vykoná správca po vydaní, pipeline ho nepredstiera. Pri chybe alebo timeout po
 promotion vytvorí skript nový lineárny rollback commit s presným predchádzajúcim
 tree, manifestom a digestom, zavolá webhook a overí predchádzajúcu revision.
-Volume názvy a konfigurácia zostávajú rovnaké. Ak zlyhá aj rollback alebo vetvu
+Pri nejednoznačnej odpovedi ref PATCH sa načíta skutočný stav vetvy. Rollback
+sa vykoná iba ak je candidate aktuálny; pôvodný parent sa nemení, iný alebo
+nečitateľný stav vyžaduje zásah správcu. Volume názvy a konfigurácia zostávajú rovnaké. Ak zlyhá aj rollback alebo vetvu
 zmení iný aktér, CI zlyhá a vyžaduje zásah správcu.
 
 ## Prvé zapojenie správcom
@@ -83,6 +85,10 @@ Snapshot zahrnie relevantné SK_KATASTER_* env nastavenia vrátane privátnej
 service konfigurácie, bez otvoreného výpisu do logu.
 
 SQLite backup API zachová commitnuté WAL dáta, samotné WAL/shm sa nearchivujú.
+Privátny staging je v backup adresári na persistentnom disku, vylúčený zo zdroja,
+preto nezávisí od produkčného 32 MiB /tmp. SQLite page count/page size, progress
+callback a výsledný súbor sa kontrolujú proti zostávajúcemu 128 MiB budgetu
+ešte pred bounded čítaním.
 Snapshot odmietne symlinky, viac než 4096 súborov alebo 128 MiB zdrojových dát.
 Backups adresáre, zvolený výstupný adresár a encrypted snapshots sú vylúčené.
 Koreňové config.json a manifest.json sú vyhradené na obnovu, snapshot takého

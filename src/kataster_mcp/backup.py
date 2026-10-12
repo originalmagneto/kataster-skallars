@@ -11,7 +11,7 @@ import tempfile
 import time
 from contextlib import closing
 from datetime import datetime, timezone
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 from cryptography.exceptions import InvalidTag
@@ -67,6 +67,29 @@ def retain(directory: Path, days: int) -> None:
             path.unlink()
 
 
+def safe_name(name: str) -> None:
+    path, windows = PurePosixPath(name), PureWindowsPath(name)
+    if (
+        path.is_absolute()
+        or not path.parts
+        or str(path) != name
+        or windows.drive
+        or windows.root
+        or any(
+            part in (".", "..")
+            or part.endswith((".", " "))
+            or re.fullmatch(
+                r"(?i)(CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])",
+                part.split(".", 1)[0].rstrip(" "),
+            )
+            for part in name.split("/")
+        )
+        or any(char in '<>:"|?*\\' or ord(char) < 32 for char in name)
+        or name in ("config.json", "manifest.json")
+    ):
+        raise ValueError("Neplatná cesta v zálohe.")
+
+
 def snapshot(
     source: Path,
     public_key: rsa.RSAPublicKey,
@@ -84,7 +107,7 @@ def snapshot(
     os.chmod(directory, 0o700)
     files: dict[str, str] = {}
     total = 0
-    with tempfile.TemporaryDirectory(prefix="kataster-backup-") as temp:
+    with tempfile.TemporaryDirectory(prefix="kataster-backup-", dir=directory) as temp:
         for root, dirs, names in os.walk(source, followlinks=False):
             parent = Path(root)
             for name in dirs + names:
@@ -118,9 +141,31 @@ def snapshot(
                         ) as db,
                         closing(sqlite3.connect(target)) as copied,
                     ):
-                        db.backup(copied)
+                        page_size = db.execute("PRAGMA page_size").fetchone()[0]
+                        budget = MAX_BYTES - total
+
+                        def bounded_backup(
+                            status: int, remaining: int, pages: int
+                        ) -> None:
+                            if (
+                                pages * page_size > budget
+                                or target.stat().st_size > budget
+                            ):
+                                raise ValueError(
+                                    "SQLite zdroj prekračuje limit zálohy."
+                                )
+
+                        if (
+                            db.execute("PRAGMA page_count").fetchone()[0] * page_size
+                            > budget
+                        ):
+                            raise ValueError("SQLite zdroj prekračuje limit zálohy.")
+                        db.backup(copied, pages=256, progress=bounded_backup)
                         copied.execute("PRAGMA journal_mode=DELETE")
-                    raw = target.read_bytes()
+                    if target.stat().st_size > MAX_BYTES - total:
+                        raise ValueError("SQLite zdroj prekračuje limit zálohy.")
+                    with target.open("rb") as handle:
+                        raw = handle.read(MAX_BYTES - total + 1)
                     target.unlink()
                 else:
                     with path.open("rb") as handle:
@@ -128,7 +173,9 @@ def snapshot(
                 total += len(raw)
                 if total > MAX_BYTES:
                     raise ValueError("Zdroj prekračuje limit zálohy.")
-                files[path.relative_to(source).as_posix()] = encoded(raw)
+                name = path.relative_to(source).as_posix()
+                safe_name(name)
+                files[name] = encoded(raw)
         config = config or {}
         created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%fZ")
         manifest = {
@@ -200,16 +247,7 @@ def restore(input: Path, private_key: rsa.RSAPrivateKey, destination: Path) -> d
             raise ValueError()
         files = {}
         for name, raw in content["files"].items():
-            path = PurePosixPath(name)
-            if (
-                path.is_absolute()
-                or not path.parts
-                or any(part in (".", "..") for part in name.split("/"))
-                or "\\" in name
-                or str(path) != name
-                or name in ("config.json", "manifest.json")
-            ):
-                raise ValueError()
+            safe_name(name)
             files[name] = base64.b64decode(raw, validate=True)
         if (
             sum(map(len, files.values())) > MAX_BYTES
