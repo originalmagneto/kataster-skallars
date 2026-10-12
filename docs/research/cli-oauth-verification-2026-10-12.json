@@ -13,5 +13,19 @@
     "issuer": "https://auth.aittorney.online"
   },
   "portalQueries": false,
-  "legacyRetired": false
+  "legacyRetired": true,
+  "legacyHttpStatus": 401,
+  "postDeployOAuthStatus": true,
+  "refreshAfterExpiry": true,
+  "deploymentRevision": "538935969eb56e63d1f12fc59b0f66d9709b0e00",
+  "ciRun": 38290886825,
+  "ciMatrix": "6 combinations passed",
+  "personalAuthorizationIsolation": {
+    "secondTenantAuthenticated": true,
+    "crossTenantUploadDenied": true,
+    "portalQueried": false,
+    "resourceRevocationDenied": true,
+    "regrantDoesNotResurrectOldToken": true,
+    "syntheticAccountDisabled": true
+  }
 }

@@ -8,7 +8,16 @@
     "snapshotBytes": 171346,
     "sqliteIntegrity": "ok",
     "membersBeforeColleagueInvite": 1,
-    "signingAndCookieKeysRestored": true
+    "signingAndCookieKeysRestored": true,
+    "scheduledRestore": {
+      "revision": "8004d9788bf5063d60d0f50f85b59fe3b9429d15",
+      "snapshotExecuted": true,
+      "isolatedServerStarted": true,
+      "oauthMetadata": true,
+      "realOpaqueTokenIntrospection": true,
+      "signingAndCookieKeysRestored": true,
+      "members": 2
+    }
   },
   "kataster": {
     "revision": "1833457c7de07cfd1c78340e47dbf1a847b93d69",
@@ -21,7 +30,10 @@
   "productionDataOverwritten": false,
   "isolatedPlaintextRestoreRemoved": true,
   "externalDestinationConfigured": false,
-  "automaticScheduleConfigured": false,
-  "fullRestoredServiceOAuthSmoke": false,
+  "automaticScheduleConfigured": {
+    "auth": true,
+    "kataster": false
+  },
+  "fullRestoredServiceOAuthSmoke": true,
   "backupTakenBeforeHudakInvitation": true
 }
