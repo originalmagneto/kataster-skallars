@@ -43,7 +43,13 @@ def default_data_dir(platform: str | None = None, env: dict | None = None) -> Pa
     return Path(base) / "kataster-mcp"
 
 
-# os.open() on Windows opens the C runtime descriptor in text mode unless O_BINARY is given (0 on POSIX).
+def standalone_data_dir() -> Path:
+    """Keep the private distribution separate from upstream and the older Kataster project."""
+    configured = os.environ.get("SK_KATASTER_DATA_DIR")
+    return Path(configured).expanduser() if configured else default_data_dir().with_name("kataster-skallars")
+
+
+# Binary descriptors preserve raw bytes on Windows.
 O_BINARY = getattr(os, "O_BINARY", 0)
 
 

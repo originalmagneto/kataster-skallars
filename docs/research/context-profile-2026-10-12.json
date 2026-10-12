@@ -1,0 +1,75 @@
+{
+  "method": "Static AST; docstrings and literal parameter descriptions only. No application imports, network or tokenization.",
+  "limitations": "Excludes JSON schema structure, dynamic f-string parameter descriptions, output schemas, host framing, loaded skills and results. Not a tools/list or hidden-context measurement.",
+  "tools_count": 11,
+  "tools": [
+    {
+      "name": "kataster_lv",
+      "description_chars": 441,
+      "literal_parameter_description_chars": 275,
+      "parameters": 4
+    },
+    {
+      "name": "kataster_lv_import",
+      "description_chars": 919,
+      "literal_parameter_description_chars": 123,
+      "parameters": 3
+    },
+    {
+      "name": "kataster_mapa",
+      "description_chars": 305,
+      "literal_parameter_description_chars": 302,
+      "parameters": 6
+    },
+    {
+      "name": "kataster_osoba_navod",
+      "description_chars": 508,
+      "literal_parameter_description_chars": 199,
+      "parameters": 6
+    },
+    {
+      "name": "kataster_osoba_prehlad",
+      "description_chars": 662,
+      "literal_parameter_description_chars": 232,
+      "parameters": 6
+    },
+    {
+      "name": "kataster_vlastnici",
+      "description_chars": 623,
+      "literal_parameter_description_chars": 334,
+      "parameters": 5
+    },
+    {
+      "name": "kataster_ku",
+      "description_chars": 291,
+      "literal_parameter_description_chars": 76,
+      "parameters": 1
+    },
+    {
+      "name": "kataster_parcela",
+      "description_chars": 319,
+      "literal_parameter_description_chars": 301,
+      "parameters": 6
+    },
+    {
+      "name": "kataster_status",
+      "description_chars": 87,
+      "literal_parameter_description_chars": 0,
+      "parameters": 0
+    },
+    {
+      "name": "kataster_skupina",
+      "description_chars": 303,
+      "literal_parameter_description_chars": 178,
+      "parameters": 3
+    },
+    {
+      "name": "kataster_vrstvy",
+      "description_chars": 2225,
+      "literal_parameter_description_chars": 241,
+      "parameters": 6
+    }
+  ],
+  "total_description_chars": 8944,
+  "instructions_chars": 511
+}

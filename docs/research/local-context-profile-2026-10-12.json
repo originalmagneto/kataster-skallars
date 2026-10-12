@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-12",
+  "sdk": "2.3.0",
+  "encoding": "o200k_base",
+  "note": "Estimate for these serialized texts only, not measured host context; discovery, instructions, skill and results load separately.",
+  "tool_count": 11,
+  "full_tool_schema_tokens": 4875,
+  "server_instruction_tokens": 136,
+  "cli_tool_names_tokens": 76,
+  "skill_body_tokens": 724
+}

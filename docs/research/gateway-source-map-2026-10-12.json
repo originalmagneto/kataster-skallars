@@ -1,0 +1,406 @@
+{
+  "date": "2026-10-12",
+  "catalog_source": {
+    "repository": "Omni-Legal-Products/lawoss-marketplace",
+    "commit": "a012fab7ea6ab49bc65009a2a335d7669941eb03",
+    "archive_sha256": "ee863647c782d77bb5909cbe8fb193c97e30920073f97563fb520321cf1823e2"
+  },
+  "services": [
+    {
+      "service": "crz",
+      "approved_tools": 10,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CRZ-MCP",
+        "composeId": "zjMf9UUmNVNCQ8SoSu_Px",
+        "name": "crz-mcp",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "crz-mcp",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_adis",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_ares",
+      "approved_tools": 9,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_cnb",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_dd",
+      "approved_tools": 9,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_eu-registry",
+      "approved_tools": 2,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_isir",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_realestate",
+      "approved_tools": 1,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "cz_sanctions",
+      "approved_tools": 5,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "CZ-Agents-MCP",
+        "composeId": "W3W1jZxQ6p328uJpqqvQW",
+        "name": "cz-agents-mcp",
+        "sourceType": "git",
+        "owner": null,
+        "repository": null,
+        "branch": null,
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "disq",
+      "approved_tools": 2,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "DISQ-MCP",
+        "composeId": "9SbEQ4qPFsG8xuTRQwRha",
+        "name": "register-diskvalifikacii",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "DISQ-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "eurlex_celex",
+      "approved_tools": 11,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "MCP-EURLEX",
+        "composeId": "BuUldGCDqtmqnb_c8ZRaq",
+        "name": "MCP-EURLEX",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "MCP-EURLEX-CELEX",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "fs_opendata_mcp",
+      "approved_tools": 9,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "FS-MCP",
+        "composeId": "_sYnnIUbSDF5KIVQku-5n",
+        "name": "fs-opendata",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "FS-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "judikaty",
+      "approved_tools": 20,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "judikaty-mcp",
+        "composeId": "HjFcNsx4hr4oe3N1XhtVd",
+        "name": "judikaty-mcp",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "judikaty-mcp",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "kalkulacky",
+      "approved_tools": 5,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "KALK-MCP",
+        "composeId": "3pcFt-d1glXv_5CywVKgI",
+        "name": "kalkulacky",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "kalkulacky-sk-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "orsr",
+      "approved_tools": 13,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "ORSR-MC",
+        "composeId": "C2QhfOGiSkmsFcQIo2rMn",
+        "name": "server",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "orsr-mcp",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "ov",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "OV-MCP",
+        "composeId": "TxKBvma-mrZMcx3lt7zam",
+        "name": "obchodny-vestnik",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "OV-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "rpo",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "RPO-MCP",
+        "composeId": "i29-edyhRxzSlaX6C3vnZ",
+        "name": "rpo",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "RPO-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "rpvs",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "RPVS-MCP",
+        "composeId": "evh-5_wt6NzB1uMX0QFv5",
+        "name": "rpvs",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "RPVS-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "ru",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "RU-MCP",
+        "composeId": "wHsQZn4cNDWdpdX7Uhqyg",
+        "name": "register-upadcov",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "RU-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "ruz",
+      "approved_tools": 8,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "RUZ-MCP",
+        "composeId": "uUO11kIFC1GeG3Ffa5NOG",
+        "name": "ruz-mcp",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "RUZ-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "slovlex",
+      "approved_tools": 7,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "Slov-lex-MCP",
+        "composeId": "qveWpPKGKAUPBzfrXPZHG",
+        "name": "server",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "slov-lex-mcp-deploy",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    },
+    {
+      "service": "uvo",
+      "approved_tools": 3,
+      "gateway_runtime": "bundled",
+      "configured_dokploy_source": {
+        "project": "UVO-MCP",
+        "composeId": "rVgU0mtwqhSM9yj4NYA_W",
+        "name": "uvo",
+        "sourceType": "github",
+        "owner": "originalmagneto",
+        "repository": "UVO-MCP",
+        "branch": "main",
+        "autoDeploy": true
+      },
+      "canonical_source_verified": false,
+      "runtime_version_verified": false,
+      "next_step": "Verify source provenance, deployed image and auth before HTTP adapter or bundled release update."
+    }
+  ]
+}

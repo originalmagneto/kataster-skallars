@@ -1,0 +1,35 @@
+{
+  "missing_C": {
+    "tarchy": "none",
+    "cast_c": []
+  },
+  "empty_C": {
+    "tarchy": "none",
+    "cast_c": []
+  },
+  "explicit_no_encumbrances": {
+    "tarchy": "none",
+    "cast_c": [
+      "Bez tiarch."
+    ]
+  },
+  "invalid_ico_matches_owner_without_ico": true,
+  "valid_ico_does_not_match_owner_without_ico": false,
+  "cache_latest_write_wins": {
+    "data_date": "2025-01-01"
+  },
+  "registered_tools": [
+    "kataster_ku",
+    "kataster_lv",
+    "kataster_lv_import",
+    "kataster_mapa",
+    "kataster_osoba_navod",
+    "kataster_osoba_prehlad",
+    "kataster_parcela",
+    "kataster_skupina",
+    "kataster_status",
+    "kataster_vlastnici",
+    "kataster_vrstvy"
+  ],
+  "scope": "Focused synthetic offline reproduction, not a full pytest suite or a live LV validation."
+}

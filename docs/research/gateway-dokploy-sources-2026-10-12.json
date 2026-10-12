@@ -1,0 +1,185 @@
+{
+  "evidence": "Dokploy configuration only; deployed image/source SHA not yet verified",
+  "services": [
+    {
+      "project": "uctoplus-MCP",
+      "composeId": "hXml7mvxJuyWgkN04hUhQ",
+      "name": "uctoplus-mcp",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "uctoplus-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "SKALLARS MCP",
+      "composeId": "_prUMHN4B9zfu5L1zqPRG",
+      "name": "skallars-mcp-gateway",
+      "sourceType": "raw",
+      "owner": null,
+      "repository": null,
+      "branch": null,
+      "autoDeploy": true
+    },
+    {
+      "project": "MCP CLI API Manager",
+      "composeId": "EGhsYu5sQUwSgdbRIFFBo",
+      "name": "mcp-manager-control-plane",
+      "sourceType": "github",
+      "owner": "Omni-Legal-Products",
+      "repository": "MCP-CLI-API-Manager",
+      "branch": "main",
+      "autoDeploy": false
+    },
+    {
+      "project": "KALK-MCP",
+      "composeId": "3pcFt-d1glXv_5CywVKgI",
+      "name": "kalkulacky",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "kalkulacky-sk-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "DISQ-MCP",
+      "composeId": "9SbEQ4qPFsG8xuTRQwRha",
+      "name": "register-diskvalifikacii",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "DISQ-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "RU-MCP",
+      "composeId": "wHsQZn4cNDWdpdX7Uhqyg",
+      "name": "register-upadcov",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RU-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "UVO-MCP",
+      "composeId": "rVgU0mtwqhSM9yj4NYA_W",
+      "name": "uvo",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "UVO-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "OV-MCP",
+      "composeId": "TxKBvma-mrZMcx3lt7zam",
+      "name": "obchodny-vestnik",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "OV-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "FS-MCP",
+      "composeId": "_sYnnIUbSDF5KIVQku-5n",
+      "name": "fs-opendata",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "FS-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "RPVS-MCP",
+      "composeId": "evh-5_wt6NzB1uMX0QFv5",
+      "name": "rpvs",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RPVS-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "RPO-MCP",
+      "composeId": "i29-edyhRxzSlaX6C3vnZ",
+      "name": "rpo",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RPO-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "RUZ-MCP",
+      "composeId": "uUO11kIFC1GeG3Ffa5NOG",
+      "name": "ruz-mcp",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RUZ-MCP",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "CZ-Agents-MCP",
+      "composeId": "W3W1jZxQ6p328uJpqqvQW",
+      "name": "cz-agents-mcp",
+      "sourceType": "git",
+      "owner": null,
+      "repository": null,
+      "branch": null,
+      "autoDeploy": true
+    },
+    {
+      "project": "CRZ-MCP",
+      "composeId": "zjMf9UUmNVNCQ8SoSu_Px",
+      "name": "crz-mcp",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "crz-mcp",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "MCP-EURLEX",
+      "composeId": "BuUldGCDqtmqnb_c8ZRaq",
+      "name": "MCP-EURLEX",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "MCP-EURLEX-CELEX",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "judikaty-mcp",
+      "composeId": "HjFcNsx4hr4oe3N1XhtVd",
+      "name": "judikaty-mcp",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "judikaty-mcp",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "ORSR-MC",
+      "composeId": "C2QhfOGiSkmsFcQIo2rMn",
+      "name": "server",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "orsr-mcp",
+      "branch": "main",
+      "autoDeploy": true
+    },
+    {
+      "project": "Slov-lex-MCP",
+      "composeId": "qveWpPKGKAUPBzfrXPZHG",
+      "name": "server",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "slov-lex-mcp-deploy",
+      "branch": "main",
+      "autoDeploy": true
+    }
+  ]
+}

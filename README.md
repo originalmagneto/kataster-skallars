@@ -1,3 +1,7 @@
+# Kataster SKALLARS
+
+Súkromná distribúcia MCP + CLI odvodená od `braklo/kataster-mcp` (MIT). Aktuálny lokálny pilot, inštalácia a hranice implementácie: [docs/local-pilot.md](docs/local-pilot.md). Nasleduje pôvodná upstream dokumentácia; jej inštalačné URL smerujú na upstream.
+
 # kataster-mcp
 
 MCP server pre kataster nehnuteľností Slovenskej republiky. Umožňuje AI asistentovi alebo jazykovému modelu
