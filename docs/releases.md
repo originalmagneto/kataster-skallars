@@ -27,8 +27,22 @@ Kontroly sú oddelené: health musí mať cieľovú revision, OAuth metadata spr
 resource/issuer a chránený endpoint musí odmietnuť volanie bez tokenu 401.
 Kataster MCP schema a stdio handshake sú offline regresie. OAuth business smoke
 vykoná správca po vydaní, pipeline ho nepredstiera. Pri chybe alebo timeout po
-promotion vytvorí skript nový lineárny rollback commit s presným predchádzajúcim
-tree, manifestom a digestom, zavolá webhook a overí predchádzajúcu revision.
+promotion vytvorí skript nový lineárny rollback commit na tree práve testovaného
+candidate. Obnoví presný obsah predchádzajúcich compose.yaml a .dokploy-release.json,
+zavolá webhook a overí predchádzajúcu revision. Pred promotion overí zhodu pôvodného
+compose so šablónou jeho source SHA, literal image digest a SOURCE_REVISION, bez build.
+Tým zachová starší runtime image, jeho source revision, environment a volume
+konfiguráciu. Obsah databáz a volumes sa nevracia do minulosti.
+
+Súbory workflow a nepoužívaný zdrojový kód v machine vetve zostanú z aktuálneho
+candidate. Kontajnery bežia z pinovaného image s pomenovanými volumes, bez bind
+mountu hostiteľského zdrojového kódu. Git tree rollback preto nie je potrebný
+na runtime rollback. Natívny GITHUB_TOKEN s contents:write v izolovanej CI skúške
+38302378473 odmietol návrat celého starého tree odpoveďou 403, ale obnovu dvoch
+runtime súborov na aktuálnom tree povolil odpoveďou 200. Pipeline nevyžaduje širší
+PAT, vlastnú GitHub App ani plný Dokploy API kľúč. Externé Dokploy environment
+hodnoty zostávajú počas promotion aj rollback rovnaké. Zmena autentifikačného
+režimu alebo nekompatibilná migrácia vyžaduje osobitný overený baseline.
 Pri nejednoznačnej odpovedi ref PATCH sa načíta skutočný stav vetvy. Rollback
 sa vykoná iba ak je candidate aktuálny; pôvodný parent sa nemení, iný alebo
 nečitateľný stav vyžaduje zásah správcu. Volume názvy a konfigurácia zostávajú rovnaké. Ak zlyhá aj rollback alebo vetvu

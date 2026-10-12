@@ -15,26 +15,40 @@ class Git:
         self.stale = stale
         self.production = "f" * 40
         self.calls = []
+        self.trees = {SHA: "current-workflows", self.production: "old-workflows"}
         self.previous = {
             "source": "c" * 40,
             "image": "registry-mcp.aittorney.online/kataster@sha256:" + "d" * 64,
             "service": "kataster",
             "origin": "https://mcp-kataster.aittorney.online",
+            "retained_field": "preserve raw manifest bytes",
         }
+        self.previous_manifest = release.json.dumps(self.previous, indent=4) + "\n\n"
+        self.template = "services:\n  kataster:\n    build: .\n    environment:\n      SOURCE_REVISION: ${SOURCE_REVISION:-unknown}\n    volumes:\n      - kataster-data:/data\nvolumes:\n  kataster-data:\n"
+        self.previous_template = self.template.replace("kataster-data", "previous-data")
+        self.previous_compose = release.compose_release(
+            self.previous_template, self.previous["image"], self.previous["source"]
+        )
 
     def ref(self, name):
         return ("e" * 40 if self.stale else SHA) if name == "main" else self.production
 
     def file(self, path, ref):
         if path == ".dokploy-release.json":
-            return release.json.dumps(self.previous)
-        return "services:\n  kataster:\n    build: .\n    environment:\n      SOURCE_REVISION: ${SOURCE_REVISION:-unknown}\n    volumes:\n      - kataster-data:/data\nvolumes:\n  kataster-data:\n"
+            return self.previous_manifest
+        if ref == "f" * 40:
+            return self.previous_compose
+        return self.previous_template if ref == self.previous["source"] else self.template
 
     def commit(self, source, parent, files, message):
         self.calls.append(("commit", source, parent, files))
-        return str(len(self.calls)) * 40
+        sha = str(len(self.calls)) * 40
+        self.trees[sha] = self.trees[source]
+        return sha
 
     def update(self, sha):
+        if self.trees[sha] != "current-workflows":
+            raise RuntimeError("403: native CI token cannot restore old workflows")
         self.calls.append(("update", sha, False))
         self.production = sha
 
@@ -73,12 +87,16 @@ class PromotionTests(unittest.TestCase):
         )
         self.assertEqual(git.calls, [])
 
-    def test_failure_rolls_back_exact_previous_tree_linearly(self):
+    def test_failure_rolls_back_exact_runtime_on_current_workflows_linearly(self):
         for error in (TimeoutError(), RuntimeError("secret URL")):
             git = Git()
-            smoke = lambda manifest: (
-                (_ for _ in ()).throw(error) if manifest["source"] == SHA else None
-            )
+            manifests = []
+
+            def smoke(manifest):
+                manifests.append(manifest)
+                if manifest["source"] == SHA:
+                    raise error
+
             with self.assertRaisesRegex(
                 RuntimeError, "^Vydanie zlyhalo; predchádzajúce vydanie obnovené.$"
             ):
@@ -91,11 +109,40 @@ class PromotionTests(unittest.TestCase):
                     lambda sha: None,
                     smoke,
                 )
-            first, second = git.calls[0], git.calls[2]
-            self.assertEqual(second[1], "f" * 40)
+            self.assertEqual(manifests[-1], git.previous)
+            second = git.calls[2]
+            self.assertEqual(second[1], git.calls[1][1])
             self.assertEqual(second[2], git.calls[1][1])
-            self.assertEqual(second[3], {})
+            self.assertEqual(
+                second[3],
+                {
+                    "compose.yaml": git.previous_compose,
+                    ".dokploy-release.json": git.previous_manifest,
+                },
+            )
+            self.assertEqual(git.trees[git.production], "current-workflows")
             self.assertEqual(git.calls[-1][2], False)
+
+    def test_invalid_previous_compose_fails_before_mutation(self):
+        for invalid in (
+            lambda git: git.previous_compose.replace(git.previous["image"], DIGEST),
+            lambda git: git.previous_compose.replace(git.previous["source"], SHA),
+            lambda git: git.previous_compose + "    build: .\n",
+            lambda git: git.previous_compose.replace("previous-data", "unexpected-data"),
+        ):
+            git = Git()
+            git.previous_compose = invalid(git)
+            with self.assertRaises(ValueError):
+                release.promote(
+                    git,
+                    SHA,
+                    DIGEST,
+                    "kataster",
+                    "https://mcp-kataster.aittorney.online",
+                    lambda sha: self.fail("trigger"),
+                    lambda manifest: self.fail("smoke"),
+                )
+            self.assertEqual(git.calls, [])
 
     def test_invalid_digest_fails_before_mutation(self):
         git = Git()
@@ -167,7 +214,16 @@ class PromotionTests(unittest.TestCase):
             self.assertNotIn("secret", str(error.exception))
             self.assertEqual(len(triggers), 1 if state == "candidate" else 0)
             if state == "candidate":
-                self.assertEqual(git.calls[2][1:3], ("f" * 40, git.calls[1][1]))
+                self.assertEqual(
+                    git.calls[2][1:3], (git.calls[1][1], git.calls[1][1])
+                )
+                self.assertEqual(
+                    git.calls[2][3],
+                    {
+                        "compose.yaml": git.previous_compose,
+                        ".dokploy-release.json": git.previous_manifest,
+                    },
+                )
             else:
                 self.assertEqual([call[0] for call in git.calls], ["commit"])
 

@@ -141,12 +141,23 @@ def promote(git, source, image, service, origin, trigger, smoke):
         print("Staršie main vydanie preskočené.")
         return False
     parent = git.ref(BRANCH)
-    previous = json.loads(git.file(".dokploy-release.json", parent))
+    previous_manifest = git.file(".dokploy-release.json", parent)
+    previous = json.loads(previous_manifest)
     validate(
         previous["source"], previous["image"], previous["service"], previous["origin"]
     )
     if previous["service"] != service or previous["origin"] != origin:
         raise ValueError("Predchádzajúce vydanie patrí inej službe.")
+    previous_compose = git.file("compose.yaml", parent)
+    expected_compose = compose_release(
+        git.file("compose.yaml", previous["source"]),
+        previous["image"],
+        previous["source"],
+    )
+    if previous_compose != expected_compose or re.search(
+        r"(?m)^\s*build:", previous_compose
+    ):
+        raise ValueError("Predchádzajúci compose nezodpovedá image-only vydaniu.")
     manifest = {
         "source": source,
         "image": image,
@@ -188,7 +199,13 @@ def promote(git, source, image, service, origin, trigger, smoke):
             ) from None
         try:
             rollback = git.commit(
-                parent, commit, {}, "Rollback " + source + " to " + previous["source"]
+                commit,
+                commit,
+                {
+                    "compose.yaml": previous_compose,
+                    ".dokploy-release.json": previous_manifest,
+                },
+                "Rollback " + source + " to " + previous["source"],
             )
             git.update(rollback)
             trigger(rollback)
