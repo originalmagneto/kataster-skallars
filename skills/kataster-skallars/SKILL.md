@@ -9,6 +9,8 @@ Pri CLI over `command -v sk-kataster`; pri probléme použi `sk-kataster --json 
 
 Pri parcele najprv rozlíš katastrálne územie cez `kataster_ku`, potom použi `kataster_parcela` s číslom a registrom C/E alebo so súradnicami. Nezamieňaj obec a k.ú.; pri nejednoznačnosti si nechaj doplniť identifikátor. Vlastníkov zisťuje `kataster_vlastnici`, geometria parcely ich neobsahuje. `kataster_vrstvy` dopĺňa dostupné tematické údaje, `kataster_skupina` geometriu skupiny. Na lokálnu mapu použi `kataster_mapa`. Pred volaním si pozri schému konkrétneho nástroja; nevymýšľaj argumenty ani chýbajúce údaje. Vyžiadané konkrétne zisťovanie môže volať portál v jeho limitoch.
 
+Pri adrese dohľadaj polohu konkrétnej budovy v registri adries alebo dôveryhodnej mape a uveď zdroj. Rozlíš súpisné a orientačné číslo. Potvrď k.ú. cez `kataster_ku`, polohu priraď cez `kataster_parcela` a vlastníkov prever cez `kataster_vlastnici`. Mapové priradenie označ ako odvodené, kým ho nepotvrdí LV alebo register adries. Adresa bydliska osoby sama nepotvrdzuje jej vlastníctvo. Neprechádzaj susedné parcely na hľadanie osoby. Ak detail nevráti vlastníkov, prázdny zoznam nie je dôkaz neprítomnosti vlastníka ani jeho bytu: použi `kataster_lv` pre nájdené číslo LV. Odkaz otvor v dostupnom prehliadači; pri CAPTCHA ponechaj stránku používateľovi a pokračuj až po jeho ručnom overení. Ak výpis nie je dostupný na čítanie, vyžiadaj uložené HTML/PDF. Konkrétny byt, podiel a ťarchy potvrď až z prečítaného výpisu. Živé osobné údaje nepridávaj do skillu, príkladov ani Git.
+
 Začni úzkym príkazom; celé MCP schémy načítaj iba podľa potreby:
 
 ```sh

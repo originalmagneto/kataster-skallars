@@ -1,5 +1,15 @@
 # Kataster MCP – inicializácia a pokračovanie
 
+## Plugin distribúcia, 12. 10. 2026
+
+Na nové výslovné zadanie používateľa sa Kataster balí ako samostatný privátny
+plugin pre Claude Code a Codex, dostupný cez SKALLARS marketplace, a zároveň
+sa pridáva smerovanie do existujúceho Marian Cuprik Legal pluginu. Kanonický
+skill vrátane adresového workflow zostáva tu; marketplace sleduje tento Git
+zdroj. Manifesty pluginu majú verziu 0.1.0, Python/backend zostáva 0.5.0.
+Postup a hranice sú v docs/plugin.md. Táto sekcia opisuje pripravený zdroj;
+výsledok inštalácie a časovača sa doplní po ich živom overení.
+
 ## Nasadené spoločné OAuth, 12. 10. 2026
 
 Nové výslovné zadanie deployu bolo splnené. Súkromný originalmagneto/skallars-auth je nasadený na vlastnom Dokploy, autorita https://auth.aittorney.online, code revision b9fff092c51e4deb10872fd9b7e7e431ef676e56. Kataster 0.5.0 je nasadený s OAuth metadátami a introspekciou, code revision 1833457c7de07cfd1c78340e47dbf1a847b93d69. Oba kontajnery healthy, verejné HTTPS má platný Let's Encrypt certifikát. Pri prvom deployi bola opravená health kontrola: Node fetch neodoslal požadovaný Host, native node:http kontrola ho odosiela. Nešlo o vypnutie host kontroly.

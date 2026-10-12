@@ -47,7 +47,7 @@ build-backend = "hatchling.build"
 
 # Allowlist for the source distribution.
 [tool.hatch.build.targets.sdist]
-only-include = ["src", "tests", "LICENSE", "README.md", "pyproject.toml"]
+only-include = ["src", "tests", "LICENSE", "README.md", "pyproject.toml", "plugin.json", "mcp.json", ".mcp.json", ".codex-plugin", ".claude-plugin", "skills"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kataster_mcp"]

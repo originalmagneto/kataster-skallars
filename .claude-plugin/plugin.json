@@ -1,0 +1,8 @@
+{
+  "name": "kataster-skallars",
+  "version": "0.1.0",
+  "description": "Slovenský kataster: parcely, vlastníci, adresy a importované listy vlastníctva.",
+  "author": {
+    "name": "SKALLARS Law"
+  }
+}

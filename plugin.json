@@ -1,0 +1,29 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "kataster-skallars",
+  "version": "0.1.0",
+  "description": "Slovenský kataster: parcely, vlastníci, adresy a importované listy vlastníctva.",
+  "author": {
+    "name": "SKALLARS Law"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Kataster SKALLARS",
+        "shortDescription": "Parcely a listy vlastníctva",
+        "longDescription": "Priamy súkromný Kataster MCP s osobným OAuth a postupom pre CLI, parcely, adresy a ručné overenie CAPTCHA. Prehľad osoby pokrýva iba importované LV.",
+        "developerName": "SKALLARS Law",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Research",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Prever parcelu alebo list vlastníctva.",
+          "Dohľadaj parcelu a LV podľa adresy."
+        ]
+      }
+    }
+  }
+}
