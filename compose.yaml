@@ -11,6 +11,8 @@ services:
     environment:
       SK_KATASTER_ORIGIN: https://mcp-kataster.aittorney.online
       SK_KATASTER_TOKENS: ${SK_KATASTER_TOKENS:?Configure per-user token hashes in Dokploy}
+      SK_KATASTER_AUTH_ISSUER: ${SK_KATASTER_AUTH_ISSUER:-}
+      SK_KATASTER_AUTH_SECRET: ${SK_KATASTER_AUTH_SECRET:-}
       SOURCE_REVISION: ${SOURCE_REVISION:-unknown}
     volumes:
       - kataster-data:/data

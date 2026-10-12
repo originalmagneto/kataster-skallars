@@ -252,3 +252,133 @@ def test_parallel_harness_discovery_waits_instead_of_failing(remote):
         second = pool.submit(call, client, "kataster_status", {})
         assert not first.result().get("isError")
         assert not second.result().get("isError")
+
+
+def test_oauth_metadata_tenant_mapping_and_fail_closed(tmp_path):
+    import httpx
+    from kataster_mcp.remote_auth import OAuth
+
+    tokens = tmp_path / "tokens.json"
+    tokens.write_text("[]")
+    issuer = "https://auth.example"
+    active = {"value": True}
+    calls = []
+
+    def introspect(request):
+        calls.append(request)
+        assert request.headers["authorization"] == "Bearer test-service-secret"
+        return httpx.Response(
+            200,
+            json={
+                "active": active["value"],
+                "iss": issuer,
+                "aud": "http://testserver/mcp",
+                "tenant": "alice",
+                "sub": "synthetic-member",
+                "scope": "mcp:tools",
+                "exp": time.time() + 300,
+            },
+        )
+
+    oauth = OAuth(issuer, "test-service-secret", "http://testserver/mcp")
+    oauth.client = httpx.AsyncClient(transport=httpx.MockTransport(introspect))
+    app = create_app(tmp_path / "data", tokens, "http://testserver", oauth=oauth)
+    with TestClient(app) as client:
+        missing = client.post("/mcp")
+        assert missing.status_code == 401
+        assert "resource_metadata=" in missing.headers["www-authenticate"]
+        metadata = client.get("/.well-known/oauth-protected-resource/mcp").json()
+        assert metadata["authorization_servers"] == [issuer]
+        assert metadata["resource"] == "http://testserver/mcp"
+        assert call(client, "kataster_status", {}, "synthetic-oauth")["content"]
+        assert "alice" in app.apps
+        assert len(calls) == 1
+        active["value"] = False
+        assert (
+            client.post("/mcp", headers=headers("synthetic-oauth")).status_code == 401
+        )
+
+
+def test_oauth_rejects_wrong_resource_issuer_expiry_or_tenant(tmp_path):
+    import asyncio
+    import httpx
+    from kataster_mcp.remote_auth import OAuth
+
+    async def check():
+        oauth = OAuth(
+            "https://auth.example",
+            "test-service-secret",
+            "https://kataster.example/mcp",
+        )
+        valid = {
+            "active": True,
+            "iss": "https://auth.example",
+            "aud": "https://kataster.example/mcp",
+            "tenant": "alice",
+            "sub": "member",
+            "scope": "mcp:tools",
+            "exp": time.time() + 300,
+        }
+        for override in [
+            {"aud": "https://other.example/mcp"},
+            {"iss": "https://evil.example"},
+            {"exp": 0},
+            {"tenant": "../bob"},
+            {"scope": "other"},
+            {"active": False},
+            {"sub": ""},
+        ]:
+            async with httpx.AsyncClient(
+                transport=httpx.MockTransport(
+                    lambda _: httpx.Response(200, json=valid | override)
+                )
+            ) as client:
+                oauth.client = client
+                assert await oauth.tenant("test-token") is None
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _: httpx.Response(503))
+        ) as client:
+            oauth.client = client
+            assert await oauth.tenant("test-token") is None
+
+    asyncio.run(check())
+
+
+def test_oauth_tenant_startup_failure_can_retry(tmp_path, monkeypatch):
+    import httpx
+    from kataster_mcp.remote_auth import OAuth
+
+    tokens = tmp_path / "tokens.json"
+    tokens.write_text("[]")
+    oauth = OAuth("https://auth.example", "service-secret", "http://testserver/mcp")
+    oauth.client = httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                200,
+                json={
+                    "active": True,
+                    "iss": "https://auth.example",
+                    "aud": "http://testserver/mcp",
+                    "tenant": "alice",
+                    "sub": "alice",
+                    "scope": "mcp:tools",
+                    "exp": time.time() + 300,
+                },
+            )
+        )
+    )
+    app = create_app(tmp_path / "data", tokens, "http://testserver", oauth=oauth)
+    original = app.run_tenant
+
+    async def fail_start(child, ready):
+        ready.set()
+        raise RuntimeError("synthetic startup failure")
+
+    with TestClient(app) as client:
+        monkeypatch.setattr(app, "run_tenant", fail_start)
+        assert (
+            client.post("/mcp", headers=headers("synthetic-oauth")).status_code == 503
+        )
+        assert "alice" not in app.apps
+        monkeypatch.setattr(app, "run_tenant", original)
+        assert call(client, "kataster_status", {}, "synthetic-oauth")["content"]

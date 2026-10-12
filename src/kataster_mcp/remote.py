@@ -29,6 +29,7 @@ from .envelope import Envelope
 from .http import Http
 from .policy import PUBLIC_POLICY
 from .server import create_server
+from .remote_auth import OAuth
 
 MAX_UPLOAD = 5 * 1024**2
 UPLOAD_TTL = 86400
@@ -125,7 +126,14 @@ def remote_tools(server, directory: Path) -> None:
 
 
 class Remote:
-    def __init__(self, data_dir: Path, token_file: Path, origin: str):
+    def __init__(
+        self, data_dir: Path, token_file: Path, origin: str, oauth: OAuth | None = None
+    ):
+        self.oauth = oauth
+        self.tenant_lock = asyncio.Lock()
+        self.running = False
+        self.stop_tenants = asyncio.Event()
+        self.dynamic_lifespans: list[asyncio.Task] = []
         self.data_dir, self.token_file, self.origin = (
             data_dir,
             token_file,
@@ -148,25 +156,7 @@ class Remote:
         self.pending = 0
         self.servers, self.apps = {}, {}
         for tenant in {r["tenant"] for r in read_tokens(token_file)}:
-            directory = data_dir / "users" / tenant
-            server = create_server(data_dir=directory, http=self.http)
-            server.app_state.quota = self.quota
-            page_size = server.app_state.osoby.db.execute(
-                "PRAGMA page_size"
-            ).fetchone()[0]
-            server.app_state.osoby.db.execute(
-                f"PRAGMA max_page_count={64 * 1024**2 // page_size}"
-            )
-            remote_tools(server, directory)
-            self.servers[tenant] = server
-            self.apps[tenant] = server.streamable_http_app(
-                stateless_http=True,
-                json_response=True,
-                max_request_body_size=65536,
-                transport_security=TransportSecuritySettings(
-                    allowed_hosts=[self.host], allowed_origins=[self.origin]
-                ),
-            )
+            self.add_tenant(tenant)
         self.http.blocks = self.shared
         self.app = Starlette(
             routes=[
@@ -175,6 +165,34 @@ class Remote:
             ],
             lifespan=self.lifespan,
         )
+
+    def add_tenant(self, tenant: str) -> None:
+        directory = self.data_dir / "users" / tenant
+        server = create_server(data_dir=directory, http=self.http)
+        server.app_state.quota = self.quota
+        page_size = server.app_state.osoby.db.execute("PRAGMA page_size").fetchone()[0]
+        server.app_state.osoby.db.execute(
+            f"PRAGMA max_page_count={64 * 1024**2 // page_size}"
+        )
+        remote_tools(server, directory)
+        self.servers[tenant] = server
+        self.apps[tenant] = server.streamable_http_app(
+            stateless_http=True,
+            json_response=True,
+            max_request_body_size=65536,
+            transport_security=TransportSecuritySettings(
+                allowed_hosts=[self.host], allowed_origins=[self.origin]
+            ),
+        )
+
+    async def run_tenant(self, child, ready: asyncio.Event) -> None:
+        # AnyIO cancel scopes must enter and exit in the same task.
+        try:
+            async with child.router.lifespan_context(child):
+                ready.set()
+                await self.stop_tenants.wait()
+        finally:
+            ready.set()
 
     async def health(self, request: Request) -> JSONResponse:
         return JSONResponse(
@@ -241,15 +259,21 @@ class Remote:
     @asynccontextmanager
     async def lifespan(self, app):
         async with AsyncExitStack() as stack:
+            self.running = True
             for child in self.apps.values():
                 await stack.enter_async_context(child.router.lifespan_context(child))
             purge = asyncio.create_task(self.purge_loop())
             try:
                 yield
             finally:
+                self.running = False
+                self.stop_tenants.set()
+                await asyncio.gather(*self.dynamic_lifespans, return_exceptions=True)
                 purge.cancel()
                 with suppress(asyncio.CancelledError):
                     await purge
+                if self.oauth:
+                    await self.oauth.client.aclose()
                 await self.http.aclose()
                 for server in self.servers.values():
                     server.app_state.cache.db.close()
@@ -268,6 +292,24 @@ class Remote:
             return await JSONResponse({"error": "Invalid origin"}, 403)(
                 scope, receive, send
             )
+        if (
+            self.oauth
+            and scope["path"]
+            in (
+                "/.well-known/oauth-protected-resource",
+                "/.well-known/oauth-protected-resource/mcp",
+            )
+            and scope["method"] == "GET"
+        ):
+            return await JSONResponse(
+                {
+                    "resource": self.origin + "/mcp",
+                    "authorization_servers": [self.oauth.issuer],
+                    "scopes_supported": ["mcp:tools"],
+                    "bearer_methods_supported": ["header"],
+                    "resource_name": "Kataster SKALLARS",
+                }
+            )(scope, receive, send)
         if scope["path"] == "/health":
             return await self.app(scope, receive, send)
         auth = headers.get("authorization", "")
@@ -288,11 +330,42 @@ class Remote:
             )
         except (OSError, ValueError, KeyError, TypeError):
             tenant = None
+        if tenant is None and self.oauth and auth.startswith("Bearer "):
+            tenant = await self.oauth.tenant(auth[7:])
+            if tenant and tenant not in self.apps:
+                async with self.tenant_lock:
+                    if tenant not in self.apps:
+                        if len(self.apps) >= 64 or not self.running:
+                            return await JSONResponse(
+                                {"error": "User capacity reached"}, 503
+                            )(scope, receive, send)
+                        self.add_tenant(tenant)
+                        child = self.apps[tenant]
+                        ready = asyncio.Event()
+                        task = asyncio.create_task(self.run_tenant(child, ready))
+                        self.dynamic_lifespans.append(task)
+                        await ready.wait()
+                        if task.done():
+                            try:
+                                task.result()
+                            except Exception:
+                                self.apps.pop(tenant)
+                                failed = self.servers.pop(tenant)
+                                failed.app_state.cache.db.close()
+                                failed.app_state.osoby.db.close()
+                                self.dynamic_lifespans.remove(task)
+                                return await JSONResponse(
+                                    {"error": "User service temporarily unavailable"},
+                                    503,
+                                )(scope, receive, send)
         if tenant not in self.apps:
+            challenge = 'Bearer realm="kataster"'
+            if self.oauth:
+                challenge += f', resource_metadata="{self.origin}/.well-known/oauth-protected-resource/mcp"'
             return await JSONResponse(
                 {"error": "Unauthorized"},
                 401,
-                headers={"WWW-Authenticate": 'Bearer realm="kataster"'},
+                headers={"WWW-Authenticate": challenge},
             )(scope, receive, send)
         scope["tenant"] = tenant
         # Legacy GET streams are optional; modern subscriptions use POST.
@@ -382,8 +455,10 @@ class Remote:
             self.pending -= 1
 
 
-def create_app(data_dir: Path, token_file: Path, origin: str) -> Remote:
-    return Remote(data_dir, token_file, origin)
+def create_app(
+    data_dir: Path, token_file: Path, origin: str, oauth: OAuth | None = None
+) -> Remote:
+    return Remote(data_dir, token_file, origin, oauth=oauth)
 
 
 def main() -> None:
@@ -397,8 +472,15 @@ def main() -> None:
         fd = os.open(token_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(fd, "w") as handle:
             handle.write(config)
+    origin = os.environ["SK_KATASTER_ORIGIN"]
+    issuer = os.environ.get("SK_KATASTER_AUTH_ISSUER")
+    oauth = (
+        OAuth(issuer, os.environ["SK_KATASTER_AUTH_SECRET"], origin + "/mcp")
+        if issuer
+        else None
+    )
     uvicorn.run(
-        create_app(data, token_file, os.environ["SK_KATASTER_ORIGIN"]),
+        create_app(data, token_file, origin, oauth=oauth),
         host="0.0.0.0",
         port=8000,
         access_log=False,

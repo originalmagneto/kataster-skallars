@@ -1,9 +1,13 @@
 ---
 name: kataster-skallars
-description: Kontrola a import uloženého slovenského LV (HTML/PDF), katastrálne územia a prehľad osoby z vlastných importov cez sk-kataster CLI alebo Kataster MCP.
+description: Zisťovanie údajov zo slovenského katastra cez Kataster MCP alebo sk-kataster CLI. Použi pri konkrétnych parcelách C/E, vlastníkoch, listoch vlastníctva (LV), ťarchách v dodanom LV, katastrálnych územiach, mapách parciel a importe HTML/PDF výpisov. Prehľad majetku osoby pokrýva iba vlastné importy. Samotný výklad katastrálneho práva bez zisťovania údajov sem nepatrí.
 ---
 
-Použi nainštalovaný `sk-kataster`. Over `command -v sk-kataster` a `sk-kataster --json doctor`. Lokálne operácie nepotrebujú prihlasovanie. Remote pilot používa `sk-kataster --json remote tools` na overenie spojenia a autentifikácie; token nikdy nevypisuj.
+Vyber jednu dostupnú cestu podľa úlohy. Ak je nainštalovaný `sk-kataster`, preferuj úzky CLI príkaz pre úsporu kontextu. Inak použi priamo dostupný Kataster MCP; chýbajúce CLI nie je dôvod na odmietnutie úlohy. Rešpektuj používateľom zvolenú lokálnu alebo remote službu a jej cache. Rovnakú operáciu nevolaj cez obe registrácie.
+
+Pri CLI over `command -v sk-kataster`; pri probléme použi `sk-kataster --json doctor`. Lokálne operácie nepotrebujú prihlasovanie. Remote pilot používa `sk-kataster --json remote tools` na overenie spojenia a autentifikácie; token nikdy nevypisuj. Už fungujúce spojenie netestuj opakovane pred každým dotazom.
+
+Pri parcele najprv rozlíš katastrálne územie cez `kataster_ku`, potom použi `kataster_parcela` s číslom a registrom C/E alebo so súradnicami. Nezamieňaj obec a k.ú.; pri nejednoznačnosti si nechaj doplniť identifikátor. Vlastníkov zisťuje `kataster_vlastnici`, geometria parcely ich neobsahuje. `kataster_vrstvy` dopĺňa dostupné tematické údaje, `kataster_skupina` geometriu skupiny. Na lokálnu mapu použi `kataster_mapa`. Pred volaním si pozri schému konkrétneho nástroja; nevymýšľaj argumenty ani chýbajúce údaje. Vyžiadané konkrétne zisťovanie môže volať portál v jeho limitoch.
 
 Začni úzkym príkazom; celé MCP schémy načítaj iba podľa potreby:
 
