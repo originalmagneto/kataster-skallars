@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-12",
+  "oauthLogin": true,
+  "statusCall": true,
+  "syntheticUploadImport": true,
+  "syntheticLv": "900000001",
+  "introspection": {
+    "httpStatus": 200,
+    "active": true,
+    "audience": "https://mcp-kataster.aittorney.online/mcp",
+    "scope": "mcp:tools",
+    "tenantMatchesMarian": true,
+    "issuer": "https://auth.aittorney.online"
+  },
+  "portalQueries": false,
+  "legacyRetired": false
+}

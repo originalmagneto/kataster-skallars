@@ -1,0 +1,752 @@
+{
+  "date": "2026-10-12",
+  "scope": "Configuration, canonical configured repository HEAD and Docker image IDs; no portal calls",
+  "services": [
+    {
+      "composeId": "zjMf9UUmNVNCQ8SoSu_Px",
+      "name": "crz-mcp",
+      "appName": "crz-mcp-2qpnea",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "crz-mcp",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "mcp-crz.aittorney.online",
+          "serviceName": "crz-mcp",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "NODE_ENV",
+        "PORT",
+        "MCP_AUTH_MODE",
+        "MCP_AUTH_TOKEN",
+        "MCP_PUBLIC_BASE_URL",
+        "MCP_ALLOWED_ORIGIN",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_CLIENT_ID",
+        "OAUTH_CLIENT_SECRET",
+        "OAUTH_REDIRECT_URIS",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "OAUTH_SCOPES",
+        "OAUTH_STATE_FILE",
+        "CRZ_RATE_LIMIT_PER_MIN",
+        "CRZ_USER_AGENT",
+        "CRZ_MAX_ATTACHMENT_MB",
+        "CRZ_MISTRAL_OCR",
+        "CRZ_MIN_PDF_TEXT_CHARS",
+        "MISTRAL_OCR_MODEL",
+        "MISTRAL_OCR_TIMEOUT_MS",
+        "MISTRAL_API_KEY",
+        "OAUTH_TOKEN_SIGNING_SECRET",
+        "MCP_DOMAIN",
+        "MCP_TRUST_PROXY",
+        "OAUTH_AUTHORIZATION_PASSWORD"
+      ],
+      "runtime": [],
+      "currentSourceHead": "9b1b4ebdac3a8dd9fa483635d042f0ee4aa2e6c2",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "W3W1jZxQ6p328uJpqqvQW",
+      "name": "cz-agents-mcp",
+      "appName": "compose-generate-virtual-matrix-zzt89z",
+      "sourceType": "git",
+      "owner": null,
+      "repository": null,
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "cz-realestate.humanintheloop.sk",
+          "serviceName": "realestate",
+          "port": 3030,
+          "path": "/"
+        },
+        {
+          "host": "cz-ares.humanintheloop.sk",
+          "serviceName": "ares",
+          "port": 3030,
+          "path": "/"
+        },
+        {
+          "host": "cz-cnb.humanintheloop.sk",
+          "serviceName": "cnb",
+          "port": 3030,
+          "path": "/"
+        },
+        {
+          "host": "cz-sanctions.humanintheloop.sk",
+          "serviceName": "sanctions",
+          "port": 3030,
+          "path": "/"
+        },
+        {
+          "host": "cz-isir.humanintheloop.sk",
+          "serviceName": "isir",
+          "port": 3030,
+          "path": "/"
+        },
+        {
+          "host": "cz-adis.humanintheloop.sk",
+          "serviceName": "adis",
+          "port": 3030,
+          "path": "/"
+        },
+        {
+          "host": "cz-dd.humanintheloop.sk",
+          "serviceName": "dd",
+          "port": 3030,
+          "path": "/"
+        },
+        {
+          "host": "cz-eu-registry.humanintheloop.sk",
+          "serviceName": "eu-registry",
+          "port": 3030,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "SANDBOX_HMAC_SECRET"
+      ],
+      "gitSourceSanitized": "github.com/originalmagneto/cz-agents-mcp.git",
+      "runtime": [
+        {
+          "containerId": "936626df1f22",
+          "name": "compose-generate-virtual-matrix-zzt89z-realestate-ingest-1",
+          "image": "cz-agents-realestate-ingest:latest",
+          "state": "running",
+          "status": "Up 3 weeks",
+          "imageId": "sha256:603e06b6955c93acf342fd51d6a9a9a130c4e373e20b664197f0c0acb9646e62",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "31ac3788254f",
+          "name": "compose-generate-virtual-matrix-zzt89z-realestate-1",
+          "image": "cz-agents-realestate:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:ae982162a662d9e447d1b498feeb06d437d8cd6e5ba0794d6e7570f51b72f30f",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "2cc29a40fc26",
+          "name": "compose-generate-virtual-matrix-zzt89z-dd-1",
+          "image": "cz-agents-dd:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:c1e8f8da59ac0d572d61da0ffe4d2e7ef6e708bc7d5dbe55bae2757180272885",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "53b8674b1b28",
+          "name": "compose-generate-virtual-matrix-zzt89z-isir-1",
+          "image": "cz-agents-isir:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:95691c1edf3c002ba548668cc8ae980cbe8c4be60e5849278bd389b3e3455d45",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "7e234c6b63f8",
+          "name": "compose-generate-virtual-matrix-zzt89z-adis-1",
+          "image": "cz-agents-adis:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:de8d4313591cd06fd9593d6f2b14ae18abf053aedb4c0ae392d7291a0fd5b851",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "c5d07d7350a8",
+          "name": "compose-generate-virtual-matrix-zzt89z-ares-1",
+          "image": "cz-agents-ares:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:04f89185fe8cb638beff6b717db4fa26c70e6128d0fc415977e80e464dd66b1b",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "1ae024bb2c0c",
+          "name": "compose-generate-virtual-matrix-zzt89z-cnb-1",
+          "image": "cz-agents-cnb:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:f8f0b241251518a88d030c4cbd71c22d70624131ad0debac2f6c8448728ae91b",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "f8853a9978cf",
+          "name": "compose-generate-virtual-matrix-zzt89z-eu-registry-1",
+          "image": "cz-agents-eu-registry:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:7f7f3c219ebe8feb3dcb165b34135df8ffac946545e2844647ea41de0be98e59",
+          "revisionLabel": null
+        },
+        {
+          "containerId": "46c863204a96",
+          "name": "compose-generate-virtual-matrix-zzt89z-sanctions-1",
+          "image": "cz-agents-sanctions:latest",
+          "state": "running",
+          "status": "Up 3 weeks (healthy)",
+          "imageId": "sha256:d00b9f118140c564690aa7aa9a1562c0d132a50689882c1c089595091665b7b0",
+          "revisionLabel": null
+        }
+      ]
+    },
+    {
+      "composeId": "9SbEQ4qPFsG8xuTRQwRha",
+      "name": "register-diskvalifikacii",
+      "appName": "register-diskvalifikacii-e1zfct",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "DISQ-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "disq.aittorney.online",
+          "serviceName": "register-diskvalifikacii",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "MCP_AUTH_TOKEN",
+        "MCP_AUTH_MODE",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_SCOPES",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "TRUSTED_PROXY_CIDRS"
+      ],
+      "runtime": [
+        {
+          "containerId": "89e417c0d516",
+          "name": "register-diskvalifikacii-e1zfct-register-diskvalifikacii-1",
+          "image": "register-diskvalifikacii-mcp:latest",
+          "state": "running",
+          "status": "Up 7 hours (healthy)",
+          "imageId": "sha256:cc1067af7cdf849aa2edcc42049410f42ab9b6966bba5153a5a80bda4efc81e8",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "41a301007b418268a31b61c1f3a3aa296e96fa57",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "BuUldGCDqtmqnb_c8ZRaq",
+      "name": "MCP-EURLEX",
+      "appName": "mcpeurlex-mcpeurlex-jaxwpe",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "MCP-EURLEX-CELEX",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "mcp-eurlex-celex.aittorney.online",
+          "serviceName": "eurlex-mcp",
+          "port": 3030,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "EURLEX_WS_USERNAME",
+        "EURLEX_WS_PASSWORD",
+        "API_TOKEN",
+        "ALLOWED_ORIGINS",
+        "PORT"
+      ],
+      "runtime": [],
+      "currentSourceHead": "dfd4731ebdec42e53f1bd09688b81fcc137390e8",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "_sYnnIUbSDF5KIVQku-5n",
+      "name": "fs-opendata",
+      "appName": "fs-opendata-97gbwf",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "FS-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "fs.aittorney.online",
+          "serviceName": "fs-opendata",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "FS_API_KEY",
+        "MCP_AUTH_TOKEN",
+        "MCP_AUTH_MODE",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_SCOPES",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "TRUSTED_PROXY_CIDRS"
+      ],
+      "runtime": [
+        {
+          "containerId": "aa6632b21866",
+          "name": "fs-opendata-97gbwf-fs-opendata-1",
+          "image": "fs-opendata-mcp:latest",
+          "state": "running",
+          "status": "Up 7 minutes (healthy)",
+          "imageId": "sha256:583754b03cfaaaf12b89676fc4a3f840e5cc0cecb0c3ea81059a9a4e61928393",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "e5941162314477a03b2cee4dc63602f62a68c480",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "HjFcNsx4hr4oe3N1XhtVd",
+      "name": "judikaty-mcp",
+      "appName": "judikatymcp-server-hbxhxy",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "judikaty-mcp",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "mcp-judikaty.aittorney.online",
+          "serviceName": "judiciary-mcp",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "PORT",
+        "MCP_SERVER_NAME",
+        "MCP_SERVER_VERSION",
+        "NSUD_INDEX_BATCH_SIZE",
+        "NSUD_INDEX_MAX_BATCHES",
+        "NSUD_INDEX_THROTTLE_MS",
+        "MCP_MAX_BODY_BYTES",
+        "MCP_RATE_LIMIT_RPM",
+        "MCP_RATE_LIMIT_BURST",
+        "MCP_TRUST_PROXY",
+        "RESEND_API_KEY",
+        "EMBED_API_KEY",
+        "EMBED_API_URL",
+        "EMBED_MODEL",
+        "EMBED_DIM",
+        "JEV_API_KEY",
+        "MCP_AUTH_MODE",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_SCOPES",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "OAUTH_MAX_DYNAMIC_CLIENTS",
+        "OAUTH_UNUSED_CLIENT_TTL_SECONDS",
+        "OAUTH_DYNAMIC_CLIENT_TTL_SECONDS",
+        "OAUTH_MAX_CLIENTS_PER_IDENTITY",
+        "OAUTH_READINESS_CHECK_INTERVAL_SECONDS",
+        "OAUTH_MAX_LIVE_GRANTS",
+        "OAUTH_MAX_LIVE_GRANTS_PER_CLIENT",
+        "TRUSTED_PROXY_CIDRS"
+      ],
+      "runtime": [
+        {
+          "containerId": "f76a6ae04b59",
+          "name": "judikatymcp-server-hbxhxy-judiciary-mcp-1",
+          "image": "slovak-judiciary-mcp:latest",
+          "state": "running",
+          "status": "Up 12 minutes (healthy)",
+          "imageId": "sha256:ab08b10b11ec62c254bb35e485eeb137d938d1e1fe6205d7ebd508b2c75f6da8",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "2e79a0b1861ca0104ee07e391f4ee10502f2d3d8",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "3pcFt-d1glXv_5CywVKgI",
+      "name": "kalkulacky",
+      "appName": "kalkulacky-mcp-fkgzxa",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "kalkulacky-sk-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "mcp-kalkulacky.aittorney.online",
+          "serviceName": "kalkulacky-mcp",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "MCP_AUTH_MODE",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_SCOPES",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "TRUSTED_PROXY_CIDRS"
+      ],
+      "runtime": [
+        {
+          "containerId": "1ede5cc68a54",
+          "name": "kalkulacky-mcp-fkgzxa-kalkulacky-mcp-1",
+          "image": "kalkulacky-sk-mcp:latest",
+          "state": "running",
+          "status": "Up 7 hours (healthy)",
+          "imageId": "sha256:9f230034bad69d5509dc834ac61d1753a4001d1883719e37bc52b4633bedcc32",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "2c26e80ef8826cf3581987e4da3f0b3f86c961bc",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "C2QhfOGiSkmsFcQIo2rMn",
+      "name": "server",
+      "appName": "orsrmc-server-ym0epx",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "orsr-mcp",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "mcp-orsr.aittorney.online",
+          "serviceName": "orsr-mcp",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "NODE_ENV",
+        "HOST",
+        "PORT",
+        "ALLOWED_HOSTS",
+        "MCP_AUTH_MODE",
+        "MCP_ALLOW_ANONYMOUS",
+        "MCP_AUTH_TOKEN",
+        "MCP_ALLOWED_ORIGIN",
+        "MCP_PUBLIC_BASE_URL",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "OAUTH_SCOPES",
+        "OAUTH_ACCESS_TOKEN_TTL_SECONDS",
+        "OAUTH_REFRESH_TOKEN_TTL_SECONDS",
+        "OAUTH_AUTHORIZATION_CODE_TTL_SECONDS",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_CLIENT_ID",
+        "OAUTH_CLIENT_SECRET",
+        "OAUTH_REDIRECT_URIS",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "MCP_TRUST_PROXY",
+        "OAUTH_LOGIN_SESSION_TTL_SECONDS"
+      ],
+      "runtime": [],
+      "currentSourceHead": "f46811eaf1a3249cd81cdaebf1ebf700409edc67",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "TxKBvma-mrZMcx3lt7zam",
+      "name": "obchodny-vestnik",
+      "appName": "obchodny-vestnik-vek3fi",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "OV-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "ov.aittorney.online",
+          "serviceName": "obchodny-vestnik",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "MCP_AUTH_TOKEN",
+        "MCP_AUTH_MODE",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_SCOPES",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "TRUSTED_PROXY_CIDRS"
+      ],
+      "runtime": [
+        {
+          "containerId": "9247ab7259d0",
+          "name": "obchodny-vestnik-vek3fi-obchodny-vestnik-1",
+          "image": "obchodny-vestnik-mcp:latest",
+          "state": "running",
+          "status": "Up 6 hours (healthy)",
+          "imageId": "sha256:363c589774457686cf0ddccf17feec039fdf5fb3fa3a93a5d575c165888a1198",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "37f381105d625dc31295b1bd5e84c7c2008ef7cb",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "i29-edyhRxzSlaX6C3vnZ",
+      "name": "rpo",
+      "appName": "rpo-mcp-1ansc5",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RPO-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "rpo.aittorney.online",
+          "serviceName": "rpo",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "MCP_DOMAIN",
+        "OAUTH_AUTHORIZATION_PASSWORD"
+      ],
+      "runtime": [
+        {
+          "containerId": "3c4acd994b3a",
+          "name": "rpo-mcp-1ansc5-rpo-1",
+          "image": "rpo-mcp:latest",
+          "state": "running",
+          "status": "Up 8 minutes (healthy)",
+          "imageId": "sha256:fa22fc65b70992a110996f8f84a88ecee7d244be8fa016c24db8f82fbe5370dd",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "d75a684d06575de10eb2773e65a0e62d7a1e039b",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "evh-5_wt6NzB1uMX0QFv5",
+      "name": "rpvs",
+      "appName": "rpvs-wqo9q5",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RPVS-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "rpvs.aittorney.online",
+          "serviceName": "rpvs",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "MCP_DOMAIN",
+        "MCP_TRUST_PROXY",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "OAUTH_SCOPES",
+        "OAUTH_TOKEN_STORE_PATH"
+      ],
+      "runtime": [
+        {
+          "containerId": "ecbf0ea48739",
+          "name": "rpvs-wqo9q5-rpvs-1",
+          "image": "rpvs-mcp:latest",
+          "state": "running",
+          "status": "Up 7 hours (healthy)",
+          "imageId": "sha256:8d03e44f37275d9bd57065a135e4f43c2a399e0fdc90d904e7b39e8771e5858f",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "1569bdf9191728060236c89ed428d034f6f33276",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "wHsQZn4cNDWdpdX7Uhqyg",
+      "name": "register-upadcov",
+      "appName": "register-upadcov-cjumtk",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RU-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "ru.aittorney.online",
+          "serviceName": "register-upadcov",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "MCP_AUTH_TOKEN",
+        "MCP_DOMAIN",
+        "MCP_TRUST_PROXY",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_AUTHORIZATION_PASSWORD"
+      ],
+      "runtime": [
+        {
+          "containerId": "ac5cdf28a14c",
+          "name": "register-upadcov-cjumtk-register-upadcov-1",
+          "image": "register-upadcov-mcp:latest",
+          "state": "running",
+          "status": "Up 7 minutes (healthy)",
+          "imageId": "sha256:6718047125c5499417ac5c0552b4b5218070a02d0f230950faadca4278050dc9",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "b0fee5426118671951d5f6c00898d6fdf722c597",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "uUO11kIFC1GeG3Ffa5NOG",
+      "name": "ruz-mcp",
+      "appName": "ruz-mcp-vrovdq",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "RUZ-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "ruz-mcp.aittorney.online",
+          "serviceName": "ruz-mcp",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "PORT",
+        "MCP_PUBLIC_URL",
+        "MCP_RATE_LIMIT",
+        "MCP_RATE_WINDOW_MS",
+        "MCP_AUTH_MODE",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_SCOPES",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "TRUSTED_PROXY_CIDRS"
+      ],
+      "runtime": [
+        {
+          "containerId": "48473d849f86",
+          "name": "ruz-mcp-vrovdq-ruz-mcp-1",
+          "image": "ruz-mcp:latest",
+          "state": "running",
+          "status": "Up 7 minutes (healthy)",
+          "imageId": "sha256:4dce7e9524fbc260c195697d21b7a7ba92398554a24c76b6b93acb2d3a8152d3",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "e1cfdebe4cce3de7930be67e46a947043e96b388",
+      "sourcePrivate": false
+    },
+    {
+      "composeId": "qveWpPKGKAUPBzfrXPZHG",
+      "name": "server",
+      "appName": "slovlexmcp-server-5tyufe",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "slov-lex-mcp-deploy",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "mcp-slovlex.aittorney.online",
+          "serviceName": "slov-lex-mcp",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "NODE_ENV",
+        "PORT",
+        "MCP_AUTH_MODE",
+        "MCP_PUBLIC_BASE_URL",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_CLIENT_ID",
+        "OAUTH_CLIENT_SECRET",
+        "OAUTH_REDIRECT_URIS",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "OAUTH_SCOPES",
+        "OAUTH_TOKEN_SIGNING_SECRET",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "MCP_TRUST_PROXY",
+        "OAUTH_STATE_FILE",
+        "WEB_CONCURRENCY"
+      ],
+      "runtime": [],
+      "currentSourceHead": "e130183611865b8ca6def85d43c1ad6470571180",
+      "sourcePrivate": true
+    },
+    {
+      "composeId": "rVgU0mtwqhSM9yj4NYA_W",
+      "name": "uvo",
+      "appName": "uvo-z4h2bt",
+      "sourceType": "github",
+      "owner": "originalmagneto",
+      "repository": "UVO-MCP",
+      "branch": "main",
+      "autoDeploy": true,
+      "composeStatus": "done",
+      "domains": [
+        {
+          "host": "uvo.aittorney.online",
+          "serviceName": "uvo",
+          "port": 3000,
+          "path": "/"
+        }
+      ],
+      "environmentVariableNames": [
+        "MCP_AUTH_TOKEN",
+        "MCP_AUTH_MODE",
+        "OAUTH_ISSUER_URL",
+        "OAUTH_AUTHORIZATION_PASSWORD",
+        "OAUTH_TOKEN_STORE_PATH",
+        "OAUTH_SCOPES",
+        "OAUTH_ENABLE_DYNAMIC_CLIENT_REGISTRATION",
+        "TRUSTED_PROXY_CIDRS"
+      ],
+      "runtime": [
+        {
+          "containerId": "47db3ff641c6",
+          "name": "uvo-z4h2bt-uvo-1",
+          "image": "uvo-mcp:latest",
+          "state": "running",
+          "status": "Up 7 hours (healthy)",
+          "imageId": "sha256:e043776914286134072e8a72d933ebd21c2c8558ba05bd0f3c80eb9aaa3b7aa7",
+          "revisionLabel": null
+        }
+      ],
+      "currentSourceHead": "0677c3344b3c952fa055e95ca3d9323afaad7fbe",
+      "sourcePrivate": true
+    }
+  ]
+}
