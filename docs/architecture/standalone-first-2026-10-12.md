@@ -1,5 +1,7 @@
 # Kataster: najprv samostatný súkromný projekt
 
+Potvrdená remote doména: `mcp-kataster.aittorney.online` na používateľovom Dokploy.
+
 Implementačný stav po schválenom pokračovaní: [lokálny pilot 0.3.0](../local-pilot.md). Nižšie je pôvodný návrh a audit; tvrdenie o nevytvorenom private repozitári zachytáva stav pred implementáciou.
 
 Aktualizácia smerovania podľa používateľa z 12. 10. 2026. Tento dokument má prednosť pred odporúčaním použiť SKALLARS gateway už v prvom pilote v `distribution-and-remote-proposal-2026-10-12.md`. Technické zistenia pôvodného návrhu zostávajú použiteľné.

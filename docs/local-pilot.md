@@ -57,7 +57,7 @@ Skill je v `skills/kataster-skallars/SKILL.md`; na tomto Macu sú naň symbolick
 
 ## Stav ďalších etáp
 
-Remote prevádzka potrebuje autentifikáciu nezávislú od Gateway, identitu používateľa, autorizovaný upload/export, tenantové úložisko, celkové limity dávky a parser worker. Existujúci lokálny filesystemový kontrakt sa nesmie priamo vystaviť na internet. Živé testy portálu neboli spustené.
+Používateľ potvrdil cieľovú doménu `mcp-kataster.aittorney.online` na svojom Dokploy. Remote prevádzka potrebuje autentifikáciu nezávislú od Gateway, identitu používateľa, autorizovaný upload/export, tenantové úložisko, celkové limity dávky a parser worker. Existujúci lokálny filesystemový kontrakt sa nesmie priamo vystaviť na internet. Živé testy portálu neboli spustené.
 
 Gateway: mapovanie konfigurácií je v `research/gateway-source-map-2026-10-12.json`; ide o 22 služieb a 135 schválených nástrojov. Existencia zodpovedajúcej Dokploy služby nepotvrdzuje totožnosť zdrojov ani bežiacich verzií. Nasleduje overenie source SHA/image digest, kontraktov a autentifikácie, dorovnanie pribalených runtime a postupné zavedenie release pipeline. Produkčné Gateway nasadenie sa v tejto etape nemenilo.
 
