@@ -1,3 +1,5 @@
+> Súkromný SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md). Verzia 0.4.0, upstream autorstvo a MIT licencia zachované.
+
 # Kataster SKALLARS
 
 Súkromná distribúcia MCP + CLI odvodená od `braklo/kataster-mcp` (MIT). Aktuálny lokálny pilot, inštalácia a hranice implementácie: [docs/local-pilot.md](docs/local-pilot.md). Nasleduje pôvodná upstream dokumentácia; jej inštalačné URL smerujú na upstream.

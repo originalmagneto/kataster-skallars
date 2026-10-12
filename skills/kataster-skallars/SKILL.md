@@ -3,7 +3,7 @@ name: kataster-skallars
 description: Kontrola a import uloženého slovenského LV (HTML/PDF), katastrálne územia a prehľad osoby z vlastných importov cez sk-kataster CLI alebo Kataster MCP.
 ---
 
-Použi nainštalovaný `sk-kataster`. Over `command -v sk-kataster` a `sk-kataster --json doctor`. Lokálne operácie nepotrebujú prihlasovanie. Remote verzia zatiaľ nie je nasadená.
+Použi nainštalovaný `sk-kataster`. Over `command -v sk-kataster` a `sk-kataster --json doctor`. Lokálne operácie nepotrebujú prihlasovanie. Remote pilot používa `sk-kataster --json remote tools` na overenie spojenia a autentifikácie; token nikdy nevypisuj.
 
 Začni úzkym príkazom; celé MCP schémy načítaj iba podľa potreby:
 
@@ -20,5 +20,7 @@ sk-kataster --json lv import '/absolutna/cesta/vypis.pdf' --dry-run
 `ulozenie.stav=preserved_existing` znamená, že vstup nenahradil uložený LV. Výsledok importu opisuje nový vstup, prehľad osôb naďalej číta starý záznam. Pri zmenšenom rozsahu treba preveriť úplnosť alebo skutočnú zmenu vlastníctva; netvrď, že starší záznam predstavuje aktuálny stav.
 
 Pre ďalšie nástroje použi `sk-kataster --json tools`, potom `tools NAZOV` a až potom `call NAZOV '{"argument":"hodnota"}'`. `call` môže volať portál, importovať údaje alebo zapisovať mapy; vyber iba operáciu vyžiadanú používateľom. Pri dostupnom MCP možno rovnaké nástroje volať priamo. Nekombinuj duplicitné importy oboma cestami.
+
+Pre remote import použi `remote upload CESTA` a potom `remote call kataster_lv_import '{"file_id":"ID_Z_UPLOADU"}'`. Súbor sa prenesie na Dokploy, kde patrí iba danému používateľovi. Príloha v chate ani lokálna cesta nie sú remote file_id. Lokálna a remote cache sú oddelené. Pri HTTP 429 rešpektuj Retry-After; pri 401 prever prístupový token, bez hromadných opakovaní. Remote mapové exporty a OAuth zatiaľ nie sú podporované.
 
 CAPTCHA rieši používateľ. Neobchádzaj blokáciu ani kvóty. Pri zlyhaní portálu neopakuj hromadne volania. Zdroj, dátum údajov, rozsah a varovania zahrň do záverov. Prevádzkové údaje a živé LV neukladaj do repozitára.

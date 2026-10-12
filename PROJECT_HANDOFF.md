@@ -1,5 +1,11 @@
 # Kataster MCP – inicializácia a pokračovanie
 
+## Remote implementácia 0.4.0, 12. 10. 2026
+
+Používateľ výslovne požiadal implementáciu a skúšanie. Implementovaný samostatný HTTP pilot, CLI remote upload/tools/call a osobné tokeny s expiráciou. Per-user SQLite, upload file_id, obmedzený parser subprocess, periodický purge aj pre odobratých používateľov, spoločné provider limity. Doména mcp-kataster.aittorney.online. Konkrétne hranice a postup v [remote návode](docs/remote-pilot.md). OAuth, remote mapové exporty a Gateway auto-update nie sú hotové.
+
+Dokploy projekt a compose sú vytvorené; autoDeploy vypnutý. Aktuálne dokončujeme CI a nasadenie, potvrdenie dostupnosti treba čítať z následného záznamu. Lokálny Docker HTTP test importoval syntetický LV. Priamy nástroj kataster_ku v Codex desktope už bol úspešne zavolaný; staršia poznámka nižšie o neoverenom načítaní je prekonaná.
+
 ## Implementačný stav po schválenom pokračovaní
 
 - Nový samostatný repozitár `originalmagneto/kataster-skallars` je overene private, bez fork väzby. `origin` smeruje naň, verejný fork je remote `public-fork`, upstream zostáva `braklo/kataster-mcp`. Lokálna vetva `codex/standalone-foundation`.

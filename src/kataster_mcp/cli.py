@@ -85,6 +85,9 @@ def parser() -> Parser:
     raw.add_argument(
         "arguments", help="JSON objekt argumentov; schému zistí tools NAME."
     )
+    from .remote_client import add_parser
+
+    add_parser(commands)
     return root
 
 
@@ -169,6 +172,10 @@ async def mcp_command(args: argparse.Namespace, data_dir: Path) -> dict[str, Any
 
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
+    if args.command == "remote":
+        from .remote_client import execute as remote_execute
+
+        return remote_execute(args)
     if args.command == "doctor":
         return Envelope().ok(
             {

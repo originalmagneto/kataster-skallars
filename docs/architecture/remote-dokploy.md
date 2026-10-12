@@ -1,5 +1,7 @@
 # Návrh remote verzie pre Dokploy
 
+Aktuálna implementácia: [remote pilot](../remote-pilot.md), verzia 0.4.0. Pôvodný návrh nižšie je historický; pilot používa osobné expirovateľné tokeny, OAuth zostáva ďalšou etapou.
+
 Pracovný návrh, 12. 10. 2026. Toto nie je hotová implementácia ani deployment konfigurácia. Základ je fork upstreamu 0.2.0; stdio má zostať funkčné. Najprv odstrániť chyby významu LV, potom pridať vzdialený kontrakt a izoláciu dát.
 
 Rozšírenie po lokálnej previerke 12. 10. 2026: [CLI, SKALLARS gateway, aktuálne SDK a LAWOSS distribúcia](distribution-and-remote-proposal-2026-10-12.md). Nový návrh overuje Python SDK 2.3.0, existujúcu gateway a konkrétne obmedzenia Python/remote balíkov v LAWOSS. Pri ďalšom rozhodovaní použiť tento rozšírený návrh; pôvodný text nižšie zachytáva východiskový stav.

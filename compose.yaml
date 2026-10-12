@@ -1,0 +1,30 @@
+services:
+  kataster:
+    build: .
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 1g
+    cpus: 1.0
+    environment:
+      SK_KATASTER_ORIGIN: https://mcp-kataster.aittorney.online
+      SK_KATASTER_TOKENS: ${SK_KATASTER_TOKENS:?Configure per-user token hashes in Dokploy}
+      SOURCE_REVISION: ${SOURCE_REVISION:-unknown}
+    volumes:
+      - kataster-data:/data
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/health',headers={'Host':'mcp-kataster.aittorney.online'}); urllib.request.urlopen(r,timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks: [dokploy-network]
+volumes:
+  kataster-data:
+networks:
+  dokploy-network:
+    external: true
