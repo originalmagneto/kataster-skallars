@@ -4,7 +4,7 @@ Endpoint: `https://mcp-kataster.aittorney.online/mcp`. Zdroj je súkromný `orig
 
 ## Skúšanie cez CLI
 
-Na tomto počítači je token v `~/.config/kataster-skallars/remote.token` s právami 0600. Hodnotu neposielaj do chatu ani do Git. Predvolená adresa je už nastavená v CLI.
+Mariánov pilotný token expiruje 10. 1. 2027; predtým ho treba rotovať. Na tomto počítači je token v `~/.config/kataster-skallars/remote.token` s právami 0600. Hodnotu neposielaj do chatu ani do Git. Predvolená adresa je už nastavená v CLI.
 
 ```sh
 sk-kataster --json remote doctor
@@ -21,7 +21,7 @@ Na druhom počítači: sprístupni si súkromný repozitár, nainštaluj Python 
 
 ## Codex a Claude Code
 
-V oboch klientoch použi Streamable HTTP URL vyššie a hlavičku `Authorization: Bearer TOKEN`. Na tomto počítači bude registrácia pomenovaná `kataster-skallars-remote`; lokálna `kataster-skallars` zostáva samostatná. Skill pozná oba režimy. Po zmene konfigurácie otvor nový chat alebo obnov MCP spojenia.
+V oboch klientoch použi Streamable HTTP URL vyššie a hlavičku `Authorization: Bearer TOKEN`. Na tomto počítači je registrácia pomenovaná `kataster-skallars-remote`; lokálna `kataster-skallars` zostáva samostatná. Skill pozná oba režimy. Po zmene konfigurácie otvor nový chat alebo obnov MCP spojenia.
 
 Codex konfigurácia podporuje `url` a `http_headers`, prípadne `bearer_token_env_var`, ak proces Codexu danú premennú skutočne zdedí. Claude Code podporuje `claude mcp add --transport http --scope user NAZOV URL --header 'Authorization: Bearer TOKEN'`. Do dokumentácie ani terminálovej histórie nevpisuj skutočný token. [Codex dokumentácia](https://developers.openai.com/codex/mcp), [Claude Code dokumentácia](https://code.claude.com/docs/en/mcp).
 
@@ -51,5 +51,7 @@ Priamy Dokploy autoDeploy je vypnutý. Nasadzuj až po úspešných testoch konk
 Obnova: pred zmenou deploymentu zachovaj pôvodný image/source SHA a osobitne volume. Tento pilot nenastavuje zálohy osobných dát ani nepreukazuje obnovu zo záloh. Pri strate cache možno znova importovať používateľom uchované originály. Nikdy nepouži `down -v` na produkčnej službe.
 
 ## Overenie
+
+Nasadené 12. 10. 2026: commit `4a5d1d545445e55aceb95a430387d7735912e881`, verzia 0.4.0. 151 offline testov; všetkých 6 CI kombinácií Linux/macOS/Windows a Python 3.12/3.14 prešlo. Codex zavolal remote nástroj, Claude Code cez HTTPS hlási Connected vrátane načítania nástrojov. Syntetický LV bol importovaný skúšobným používateľom a iný používateľ k nemu nemal prístup. Skúšobný token bol následne odobratý a vracia 401. [Sanitizovaný záznam](research/remote-pilot-verification-2026-10-12.json).
 
 Offline testy pokrývajú token, expiráciu/revokáciu, Host/Origin, nečitateľný a príliš veľký upload, cudzí file_id, zakázané cesty, izoláciu osôb, TTL aj po odobratí používateľa, zabitie parsera a reálny HTTP subprocess klienta CLI. Živé katastrové portály sa v týchto testoch nevolajú. Web UI nevzniklo, Safari test sa preto neuplatňuje.

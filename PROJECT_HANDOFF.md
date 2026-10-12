@@ -4,7 +4,9 @@
 
 Používateľ výslovne požiadal implementáciu a skúšanie. Implementovaný samostatný HTTP pilot, CLI remote upload/tools/call a osobné tokeny s expiráciou. Per-user SQLite, upload file_id, obmedzený parser subprocess, periodický purge aj pre odobratých používateľov, spoločné provider limity. Doména mcp-kataster.aittorney.online. Konkrétne hranice a postup v [remote návode](docs/remote-pilot.md). OAuth, remote mapové exporty a Gateway auto-update nie sú hotové.
 
-Dokploy projekt a compose sú vytvorené; autoDeploy vypnutý. Aktuálne dokončujeme CI a nasadenie, potvrdenie dostupnosti treba čítať z následného záznamu. Lokálny Docker HTTP test importoval syntetický LV. Priamy nástroj kataster_ku v Codex desktope už bol úspešne zavolaný; staršia poznámka nižšie o neoverenom načítaní je prekonaná.
+Dokploy projekt Kataster SKALLARS (YHYVENJmOuc68caY78CnS), compose hR1vGslIGKJEntXc667AS. Remote endpoint bol nasadený a HTTPS, syntetický import, cross-user odmietnutie aj revokácia skúšobného tokenu boli overené cez internet. Codex desktop priamo zavolal remote kataster_ku a kataster_status. Objavené a regresne pokryté blokovanie discovery streamom subscriptions/listen z MCP 2026; lokálny Claude Code už hlási Connected. Finálny commit 4a5d1d5 je nasadený, kontajner healthy, Codex remote nástroj zavolaný a Claude Code cez verejné HTTPS hlási Connected. CI 38274612177 prešlo vo všetkých 6 kombináciách OS/Python. Aktuálny dôkaz: docs/research/remote-pilot-verification-2026-10-12.json. 151 offline testov prešlo. AutoDeploy zostáva vypnutý, Gateway sa nemenil.
+
+Registrácia v oboch klientoch: kataster-skallars-remote. Lokálna registrácia zostáva kataster-skallars. Token je iba v chránených lokálnych konfiguračných súboroch, na serveri sú hashe; platnosť Mariánovho tokenu do 10. 1. 2027. Dočasný druhý testovací používateľ bol odobratý a jeho token overene dostáva 401.
 
 ## Implementačný stav po schválenom pokračovaní
 
