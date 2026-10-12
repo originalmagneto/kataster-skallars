@@ -25,14 +25,25 @@
     "filesRestored": 6,
     "sqliteDatabasesRestored": 5,
     "integrity": "ok",
-    "configurationRestored": true
+    "configurationRestored": true,
+    "scheduledRestore": {
+      "scheduledSnapshotRestore": true,
+      "serverStarted": true,
+      "oauthMetadata": true,
+      "realOpaqueTokenStatusCall": true,
+      "restoredSyntheticUploadImport": true,
+      "revision": "f9055f1db1d1a0ced062825c2f61e0bb5914bf9a",
+      "productionOverwritten": false,
+      "portalQueried": false
+    },
+    "scheduledSnapshotEncryptedBytes": 277151
   },
   "productionDataOverwritten": false,
   "isolatedPlaintextRestoreRemoved": true,
   "externalDestinationConfigured": false,
   "automaticScheduleConfigured": {
     "auth": true,
-    "kataster": false
+    "kataster": true
   },
   "fullRestoredServiceOAuthSmoke": true,
   "backupTakenBeforeHudakInvitation": true

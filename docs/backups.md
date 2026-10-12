@@ -1,6 +1,6 @@
 # Zálohy a obnova
 
-Používateľ zvolil zatiaľ šifrovanú lokálnu zálohu a návod na externý cieľ. Externý Dokploy backup destination zatiaľ nie je nastavený. Auth už má denný aplikačný snapshot; Kataster schedule sa zapojí po nasadení 0.6.0. Toto je odlišné od dostupnosti persistentných volumes: samotný volume nie je záloha.
+Používateľ zvolil zatiaľ šifrovanú lokálnu zálohu a návod na externý cieľ. Externý Dokploy backup destination zatiaľ nie je nastavený. Auth už má denný aplikačný snapshot; Kataster 0.6.0 už má tiež denný aplikačný snapshot. Toto je odlišné od dostupnosti persistentných volumes: samotný volume nie je záloha.
 
 ## Overená lokálna záloha
 
@@ -24,6 +24,18 @@ adresára prešla. Obnovený Auth sa spustil, poskytol OAuth metadáta a introsp
 skutočného opaque tokenu. Podpisové aj cookie kľúče ostali zhodné. Produkčný volume
 sa neprepisoval a nešifrovaný dočasný restore bol odstránený. Denná úloha zatiaľ
 vytvára súbory na serveri; automatický prenos mimo servera nie je nakonfigurovaný.
+
+## Plánovaný Kataster snapshot a plná obnova
+
+Kataster vykonáva snapshot denne o 02:30 Europe/Bratislava s rovnakou sedemdňovou
+retenciou. Skutočné manuálne spustenie Dokploy schedule prešlo. Šifrovaný súbor
+277151 bytes bol skopírovaný na Mac a jeho SHA256 bol overený.
+
+Restore CLI obnovil snapshot do nového privátneho adresára. Obnovená služba sa
+spustila iba na localhoste, poskytla správne OAuth metadáta a cez skutočný opaque
+token vykonala kataster_status aj import obnoveného syntetického uploadu. Portál
+sa nedopytoval. Produkcia sa neprepisovala a plaintext restore bol odstránený.
+Obnova zachováva konzervatívny provider guard podľa docs/releases.md.
 
 ## Recovery key
 
