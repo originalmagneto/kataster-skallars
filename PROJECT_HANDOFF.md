@@ -7,8 +7,9 @@ plugin pre Claude Code a Codex, dostupný cez SKALLARS marketplace, a zároveň
 sa pridáva smerovanie do existujúceho Marian Cuprik Legal pluginu. Kanonický
 skill vrátane adresového workflow zostáva tu; marketplace sleduje tento Git
 zdroj. Manifesty pluginu majú verziu 0.1.0, Python/backend zostáva 0.5.0.
-Postup a hranice sú v docs/plugin.md. Táto sekcia opisuje pripravený zdroj;
-výsledok inštalácie a časovača sa doplní po ich živom overení.
+Postup a hranice sú v docs/plugin.md. Pluginový commit 65391fb je na private main a jeho CI prešlo vo všetkých šiestich kombináciách. Lokálne prešlo 156 offline testov a build. Private SKALLARS marketplace vydal legal 0.9.0 a Kataster 0.1.0, oba sú overene nainštalované a enabled v Codexe aj Claude Code. Stará lokálna kópia legal pluginu je disabled, jej zdroj zachovaný. Claude natívny auto-update je zapnutý; denný používateľský LaunchAgent aktualizuje iba tieto dva balíky a prvý celý beh skončil 0. Marketplace má 27 úspešných offline testov a CI. Serverový deploy ani aktualizácia CLI nie sú súčasťou tejto zmeny.
+
+Modelová pluginová skúška zistila, že Claude potlačí plugin MCP pri rovnakej existujúcej ručnej URL. Po dočasnom vypnutí ručnej registrácie v skúšobnom priečinku sa pluginový server správne načítal, ale hlásil needs-auth, preto jeho status tool nebol zavolaný. Vyžaduje jednorazové prihlásenie v interaktívnom /mcp. Skúšobné overrides sú odstránené a pôvodné pripojenia zachované. Codex modelová CLI skúška skončila chybou obnovy modelového access tokenu, nie dôkazom chyby Kataster OAuth. Nová relácia desktop hosta a vydanie druhej verzie zostávajú neoverené.
 
 ## Nasadené spoločné OAuth, 12. 10. 2026
 
