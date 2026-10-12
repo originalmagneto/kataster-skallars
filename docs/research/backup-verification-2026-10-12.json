@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-12",
+  "scope": "Encrypted local snapshots, isolated readback restore",
+  "encryption": "AES-256-GCM with per-snapshot random key wrapped by RSA-3072 OAEP SHA-256",
+  "destination": "Private local directory outside Git",
+  "auth": {
+    "revision": "b9fff092c51e4deb10872fd9b7e7e431ef676e56",
+    "snapshotBytes": 171346,
+    "sqliteIntegrity": "ok",
+    "membersBeforeColleagueInvite": 1,
+    "signingAndCookieKeysRestored": true
+  },
+  "kataster": {
+    "revision": "1833457c7de07cfd1c78340e47dbf1a847b93d69",
+    "snapshotBytes": 216521,
+    "filesRestored": 6,
+    "sqliteDatabasesRestored": 5,
+    "integrity": "ok",
+    "configurationRestored": true
+  },
+  "productionDataOverwritten": false,
+  "isolatedPlaintextRestoreRemoved": true,
+  "externalDestinationConfigured": false,
+  "automaticScheduleConfigured": false,
+  "fullRestoredServiceOAuthSmoke": false,
+  "backupTakenBeforeHudakInvitation": true
+}
