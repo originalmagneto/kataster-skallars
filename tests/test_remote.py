@@ -290,7 +290,8 @@ def test_oauth_metadata_tenant_mapping_and_fail_closed(tmp_path):
         metadata = client.get("/.well-known/oauth-protected-resource/mcp").json()
         assert metadata["authorization_servers"] == [issuer]
         assert metadata["resource"] == "http://testserver/mcp"
-        assert call(client, "kataster_status", {}, "synthetic-oauth")["content"]
+        result = call(client, "kataster_status", {}, "synthetic-oauth")
+        assert json.loads(result["content"][0]["text"])["data"]["auth"] == "oauth"
         assert "alice" in app.apps
         assert len(calls) == 1
         active["value"] = False
@@ -381,4 +382,5 @@ def test_oauth_tenant_startup_failure_can_retry(tmp_path, monkeypatch):
         )
         assert "alice" not in app.apps
         monkeypatch.setattr(app, "run_tenant", original)
-        assert call(client, "kataster_status", {}, "synthetic-oauth")["content"]
+        result = call(client, "kataster_status", {}, "synthetic-oauth")
+        assert json.loads(result["content"][0]["text"])["data"]["auth"] == "oauth"

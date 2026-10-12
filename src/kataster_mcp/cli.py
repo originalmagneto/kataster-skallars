@@ -85,6 +85,17 @@ def parser() -> Parser:
     raw.add_argument(
         "arguments", help="JSON objekt argumentov; schému zistí tools NAME."
     )
+    backups = commands.add_parser(
+        "backup", help="Šifrovaná záloha a izolovaná obnova."
+    ).add_subparsers(dest="action", required=True)
+    snapshot = backups.add_parser("snapshot")
+    snapshot.add_argument("--public-key", type=Path, required=True)
+    snapshot.add_argument("--directory", type=Path, required=True)
+    snapshot.add_argument("--retain-days", type=int, default=7)
+    restore = backups.add_parser("restore")
+    restore.add_argument("--input", type=Path, required=True)
+    restore.add_argument("--private-key", type=Path, required=True)
+    restore.add_argument("--destination", type=Path, required=True)
     from .remote_client import add_parser
 
     add_parser(commands)
@@ -172,6 +183,10 @@ async def mcp_command(args: argparse.Namespace, data_dir: Path) -> dict[str, Any
 
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
+    if args.command == "backup":
+        from .backup import execute as backup_execute
+
+        return backup_execute(args)
     if args.command == "remote":
         from .remote_client import execute as remote_execute
 

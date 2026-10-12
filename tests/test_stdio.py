@@ -26,7 +26,7 @@ async def test_stdio_discovery_and_incomplete_lv(tmp_path):
         ClientSession(read, write) as client,
     ):
         init = await client.initialize()
-        assert init.server_info.version == "0.5.0"
+        assert init.server_info.version == "0.6.0"
         tools = await client.list_tools()
         assert "kataster_lv_import" in {tool.name for tool in tools.tools}
         result = await client.call_tool(

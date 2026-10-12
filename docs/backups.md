@@ -1,6 +1,6 @@
 # Zálohy a obnova
 
-Používateľ zvolil zatiaľ šifrovanú lokálnu zálohu a návod na externý cieľ. Na Dokploy nebol 12. 10. 2026 nastavený žiadny backup destination ani volume backup/schedule pre Kataster a Auth. Toto je odlišné od dostupnosti persistentných volumes: samotný volume nie je záloha.
+Používateľ zvolil zatiaľ šifrovanú lokálnu zálohu a návod na externý cieľ. Externý Dokploy backup destination zatiaľ nie je nastavený. Auth už má denný aplikačný snapshot; Kataster schedule sa zapojí po nasadení 0.6.0. Toto je odlišné od dostupnosti persistentných volumes: samotný volume nie je záloha.
 
 ## Overená lokálna záloha
 
@@ -8,9 +8,22 @@ Používateľ zvolil zatiaľ šifrovanú lokálnu zálohu a návod na externý c
 
 Auth snapshot obsahuje konzistentnú SQLite cez VACUUM INTO a persistentnú konfiguráciu vrátane podpisových/cookie kľúčov. Kataster snapshot používa SQLite backup API, obsahuje súbory tenantov, globálnu kvótu poskytovateľa a konfiguráciu. Nezálohuje otvorené WAL/shm ako samostatné nekonzistentné súbory. Pri obnove sa kontroluje AEAD, SHA256, bezpečné relatívne cesty a SQLite integrity_check.
 
-Reálna skúšobná obnova oboch snapshotov do samostatného dočasného adresára prešla. Auth mal jednu existujúcu osobu a zachované kľúče; Kataster obnovil šesť súborov, z toho päť SQLite. Dočasný nešifrovaný restore bol po kontrole odstránený. Produkčné volumes sa neprepisovali. Plný obnovený server s OAuth business call ešte nie je týmto testom potvrdený. Snapshot vznikol pred pozvánkou kolegu.
+Reálna skúšobná obnova oboch snapshotov do samostatného dočasného adresára prešla. Auth mal jednu existujúcu osobu a zachované kľúče; Kataster obnovil šesť súborov, z toho päť SQLite. Dočasný nešifrovaný restore bol po kontrole odstránený. Produkčné volumes sa neprepisovali. Tento prvý snapshot vznikol pred pozvánkou kolegu. Jeho vnútorný formát nemá nový manifest; pre CLI restore používaj novšie plánované snapshoty.
 
 Dôkazy: [backup-verification-2026-10-12.json](research/backup-verification-2026-10-12.json).
+
+## Plánovaný Auth snapshot a plná obnova
+
+Auth na Dokploy vykonáva snapshot denne o 02:15 Europe/Bratislava. Server má iba
+verejný RSA kľúč a ponecháva šifrované súbory sedem dní. Dve manuálne spustenia
+skutočného Dokploy schedule prešli. Výsledný snapshot bol prenesený do chráneného
+lokálneho adresára na Macu.
+
+Obnova tohto plánovaného snapshotu cez dodané restore API do nového izolovaného
+adresára prešla. Obnovený Auth sa spustil, poskytol OAuth metadáta a introspekciu
+skutočného opaque tokenu. Podpisové aj cookie kľúče ostali zhodné. Produkčný volume
+sa neprepisoval a nešifrovaný dočasný restore bol odstránený. Denná úloha zatiaľ
+vytvára súbory na serveri; automatický prenos mimo servera nie je nakonfigurovaný.
 
 ## Recovery key
 
