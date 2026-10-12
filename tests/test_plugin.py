@@ -1,6 +1,7 @@
 """The same private remote plugin can be loaded by both clients."""
 
 import json
+import tomllib
 import hashlib
 import importlib.util
 import os
@@ -92,7 +93,9 @@ async def test_extracted_local_package_stdio_from_fresh_cwd(packages, tmp_path):
     )
     async with stdio_client(params) as (read, write), ClientSession(read, write) as client:
         initialized = await client.initialize()
-        assert initialized.server_info.version == "0.5.0"
+        assert initialized.server_info.version == tomllib.loads(
+            (artifact / "runtime" / "pyproject.toml").read_text()
+        )["project"]["version"]
         assert "kataster_status" in {tool.name for tool in (await client.list_tools()).tools}
         result = await client.call_tool("kataster_status", {})
         assert not result.is_error

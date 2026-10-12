@@ -75,7 +75,7 @@ async def parse_upload(raw: bytes) -> dict:
             await process.wait()
 
 
-def remote_tools(server, directory: Path) -> None:
+def remote_tools(server, directory: Path, *, oauth: bool = False) -> None:
     server.remove_tool("kataster_lv_import")
     server.remove_tool(
         "kataster_mapa"
@@ -118,7 +118,7 @@ def remote_tools(server, directory: Path) -> None:
             {
                 "verzia": __version__,
                 "mode": "remote",
-                "auth": "personal_bearer",
+                "auth": "oauth" if oauth else "personal_bearer",
                 "upload_ttl_seconds": UPLOAD_TTL,
                 "personal_ttl_seconds": PERSONAL_TTL,
             }
@@ -174,7 +174,7 @@ class Remote:
         server.app_state.osoby.db.execute(
             f"PRAGMA max_page_count={64 * 1024**2 // page_size}"
         )
-        remote_tools(server, directory)
+        remote_tools(server, directory, oauth=self.oauth is not None)
         self.servers[tenant] = server
         self.apps[tenant] = server.streamable_http_app(
             stateless_http=True,

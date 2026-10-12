@@ -346,9 +346,10 @@ wheels = [
 
 [[package]]
 name = "kataster-mcp"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cryptography" },
     { name = "httpx" },
     { name = "mcp", extra = ["cli"] },
     { name = "pillow" },
@@ -364,6 +365,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cryptography", specifier = "==50.0.2" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "mcp", extras = ["cli"], specifier = "==2.3.0" },
     { name = "pillow", specifier = ">=12.3.0" },

@@ -22,8 +22,49 @@ jobs:
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           python-version: ${{ matrix.python }}
+      - name: Promotion regressions
+        run: uv run --frozen python scripts/test_promote_release.py
       # offline only: pyproject addopts deselect tests marked "live" (real endpoints, human pace)
       - run: uv run --frozen pytest
       - run: uv build
       - name: CLI outside checkout
         run: uv run --frozen python -c "import os, subprocess, sys, tempfile; os.chdir(tempfile.gettempdir()); subprocess.run([sys.executable, '-m', 'kataster_mcp.cli', '--json', 'doctor'], check=True)"
+
+  release:
+    needs: pytest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    concurrency:
+      group: dokploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Private registry login
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: printf '%s' "$REGISTRY_PASSWORD" | docker login registry-mcp.aittorney.online --username "$REGISTRY_USER" --password-stdin
+      - name: Build and push tested revision
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+        run: |
+          image="registry-mcp.aittorney.online/kataster:$SOURCE_REVISION"
+          docker build --platform linux/amd64 --build-arg SOURCE_REVISION="$SOURCE_REVISION" -t "$image" .
+          docker push "$image"
+          digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+          printf 'RELEASE_IMAGE=%s\n' "$digest" >> "$GITHUB_ENV"
+      - name: Promote exact digest and verify or rollback
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DOKPLOY_WEBHOOK: ${{ secrets.DOKPLOY_WEBHOOK }}
+          RELEASE_SERVICE: kataster
+          RELEASE_ORIGIN: https://mcp-kataster.aittorney.online
+        run: python3 scripts/promote_release.py
+      - name: Logout
+        if: always()
+        run: docker logout registry-mcp.aittorney.online
