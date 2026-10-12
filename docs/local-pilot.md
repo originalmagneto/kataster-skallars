@@ -60,3 +60,9 @@ Skill je v `skills/kataster-skallars/SKILL.md`; na tomto Macu sú naň symbolick
 Remote prevádzka potrebuje autentifikáciu nezávislú od Gateway, identitu používateľa, autorizovaný upload/export, tenantové úložisko, celkové limity dávky a parser worker. Existujúci lokálny filesystemový kontrakt sa nesmie priamo vystaviť na internet. Živé testy portálu neboli spustené.
 
 Gateway: mapovanie konfigurácií je v `research/gateway-source-map-2026-10-12.json`; ide o 22 služieb a 135 schválených nástrojov. Existencia zodpovedajúcej Dokploy služby nepotvrdzuje totožnosť zdrojov ani bežiacich verzií. Nasleduje overenie source SHA/image digest, kontraktov a autentifikácie, dorovnanie pribalených runtime a postupné zavedenie release pipeline. Produkčné Gateway nasadenie sa v tejto etape nemenilo.
+
+## Kontext a CI
+
+Meranie serializovaných schém s tokenizerom `o200k_base`: 11 nástrojov má približne 4 875 tokenov, samotný zoznam názvov CLI 76, celý skill 724. Je to odhad konkrétnych textov, nie nameraná spotreba harnessu; lazy discovery môže reálnu spotrebu meniť. Profil je v `research/local-context-profile-2026-10-12.json`.
+
+CI používa pôvodnú matrix Linux/macOS/Windows s Pythonom 3.12/3.14, offline testy, build a CLI smoke mimo checkoutu. Zdedený workflow pre publikovanie na verejné PyPI bol v súkromnej distribúcii odstránený. Deploy job ani produkčné tajomstvá zatiaľ nie sú nastavené.

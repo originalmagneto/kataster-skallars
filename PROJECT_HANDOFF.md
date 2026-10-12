@@ -8,7 +8,7 @@
 - Overenie: 141 offline testov prešlo, vrátane reálneho stdio handshake, chybového výsledku a CLI subprocessov mimo checkoutu. Wheel aj sdist sa zostavili. Live volania na portál neboli vykonané. Safari kontrola nie je relevantná, nemenilo sa web UI.
 - Claude Code registrácia `kataster-skallars` hlási Connected. Codex MCP sekcia bola pridaná priamo, pretože jeho CLI odmieta existujúce nastavenie agents. Ostatné nastavenia zachované; nové desktop načítanie a volanie zatiaľ neoverené. Skill je symbolicky pripojený v oboch harnesses. Nová dátová cesta je samostatná.
 - Gateway: vytvorené sanitizované JSON mapovanie 22 služieb/135 tools na Dokploy konfigurácie. Runtime SHA/digest a kanonický zdroj ešte neoverené. Gateway backendy ani deployment sa nemenili, auto-update pipeline ešte nie je nasadená.
-- Pripravené GitHub CI vykonáva offline testy a build na Pythone 3.12/3.13. Remote Kataster potrebuje doménu, samostatnú autentifikáciu, izoláciu dát a upload kontrakt. Navrhnutá doména je mcp-kataster.aittorney.online, používateľská odpoveď ešte čaká.
+- GitHub CI rozširuje upstream matrix Linux/macOS/Windows a Python 3.12/3.14 o build a CLI smoke. Duplicitný workflow bol zlúčený; zdedené publikovanie na verejné PyPI bolo odstránené. Lokálne testy používajú Python 3.13. Remote Kataster potrebuje doménu, samostatnú autentifikáciu, izoláciu dát a upload kontrakt. Navrhnutá doména je mcp-kataster.aittorney.online, používateľská odpoveď ešte čaká.
 - Návod a hranice: [lokálny pilot](docs/local-pilot.md). Staršie sekcie nižšie sú historická evidencia, tvrdenia o neprítomnej implementácii alebo nezmenenom origin už neplatia.
 
 ## Historická inicializácia
