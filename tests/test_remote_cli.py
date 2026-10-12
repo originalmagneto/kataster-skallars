@@ -82,6 +82,48 @@ def test_remote_cli_roundtrip(tmp_path):
             except httpx.HTTPError:
                 pass
             time.sleep(0.1)
+        with httpx.stream(
+            "GET",
+            origin + "/mcp",
+            headers={"Authorization": "Bearer " + token, "Accept": "text/event-stream"},
+            timeout=2,
+        ) as stream:
+            assert stream.status_code == 405
+        with httpx.stream(
+            "POST",
+            origin + "/mcp",
+            headers={
+                "Authorization": "Bearer " + token,
+                "Accept": "application/json, text/event-stream",
+                "MCP-Protocol-Version": "2026-07-28",
+                "Mcp-Method": "subscriptions/listen",
+            },
+            json={
+                "jsonrpc": "2.0",
+                "id": "listen-test",
+                "method": "subscriptions/listen",
+                "params": {
+                    "notifications": {"toolsListChanged": True},
+                    "_meta": {
+                        "io.modelcontextprotocol/clientCapabilities": {},
+                        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                    },
+                },
+            },
+            timeout=2,
+        ) as stream:
+            assert stream.status_code == 200, stream.read().decode()
+            response = httpx.post(
+                origin + "/mcp",
+                headers={
+                    "Authorization": "Bearer " + token,
+                    "Accept": "application/json, text/event-stream",
+                },
+                json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
+                timeout=2,
+            )
+            assert response.status_code == 200
+            assert len(response.json()["result"]["tools"]) == 10
         assert cli("tools")[0] == 0
         code, result = cli("call", "kataster_ku", '{"query":"Záhorská Bystrica"}')
         assert code == 0 and result["data"][0]["kod"] == "871796"

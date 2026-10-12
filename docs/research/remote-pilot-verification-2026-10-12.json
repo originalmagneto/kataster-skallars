@@ -2,12 +2,30 @@
   "checked_at": "2026-10-12T15:49:35Z",
   "endpoint": "https://mcp-kataster.aittorney.online/mcp",
   "version": "0.4.0",
-  "revision": "a2a19d88967c69b01054bfd199a7a79dbc11be56",
   "tls_verified": true,
   "unauthenticated_status": 401,
   "synthetic_upload_import": true,
   "cross_user_file_rejected": true,
   "cross_user_overview_empty": true,
   "server_path_rejected": true,
-  "live_portal_calls": false
+  "live_portal_calls": false,
+  "initial_revision": "a2a19d88967c69b01054bfd199a7a79dbc11be56",
+  "revision": "37681f46cb3a21df0d830511301219fa650ad1d8",
+  "final_checked_at": "2026-10-12T15:55:05Z",
+  "revoked_test_token_status": 401,
+  "codex_native_remote_tools": [
+    "kataster_ku",
+    "kataster_status"
+  ],
+  "claude_code_connected": false,
+  "ci_run": 38273372906,
+  "offline_tests": 151,
+  "container": {
+    "image_id": "sha256:702779b405917397d2b3c91e351da067da372827ddaa812a748f08153d6f64dd",
+    "user": "10001:10001",
+    "health": "healthy",
+    "read_only_root": true,
+    "memory_bytes": 1073741824,
+    "pids_limit": 64
+  }
 }

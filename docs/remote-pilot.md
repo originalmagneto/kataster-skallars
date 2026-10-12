@@ -35,7 +35,7 @@ Správca pridá záznam do Dokploy environment, zachová existujúce záznamy a 
 
 ## Limity a dáta
 
-- Jedna replika, jeden aktívny request a najviac 8 prijatých requestov vrátane čakajúcich. Bežné paralelné discovery sa zaradí do fronty; až naplnená fronta vracia HTTP 429 s Retry-After 3 s. Zdieľaný Http klient, blokácie poskytovateľov aj denná kvóta 50 parciel bránia násobeniu limitov počtom používateľov.
+- Jedna replika, jedno aktívne volanie nástroja alebo upload a najviac 8 takýchto požiadaviek vrátane čakajúcich. Až naplnená fronta vracia HTTP 429 s Retry-After 3 s. Discovery a notifikačné streamy MCP 2026 subscriptions/listen bežia mimo provider zámku; celková HTTP súbežnosť procesu je ohraničená na 64. Legacy GET stream vracia 405. Zdieľaný Http klient, blokácie poskytovateľov aj denná kvóta 50 parciel bránia násobeniu limitov počtom používateľov.
 - Upload HTML/PDF najviac 5 MiB, najviac 50 súborov na používateľa; originály expirujú po 24 hodinách. Parser: vlastný proces, 20 s wall time, na Linuxe 15 s CPU a 512 MiB adresného priestoru, PDF do 100 strán, normalizovaný výsledok do 2 MiB.
 - Importovaná osobná cache má TTL 7 dní a limit SQLite 64 MiB na používateľa. Každý má vlastnú databázu. Purge beží každých 60 s aj bez requestov a zahŕňa už odobratých používateľov. Reimport môže obnoviť retenčný čas. SQLite secure_delete nie je záruka vymazania zo snapshotov/backupov hostiteľa.
 - Kontajner beží ako UID 10001, read-only root, bez capabilities, no-new-privileges, 1 GiB RAM, 1 CPU, 64 procesov. Dáta sú na pomenovanom lokálnom volume, temp je obmedzený tmpfs. Žiadne hostiteľské porty sa nepublikujú; HTTPS smeruje cez Dokploy Traefik.

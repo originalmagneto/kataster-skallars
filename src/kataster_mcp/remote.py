@@ -17,7 +17,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
 from starlette.datastructures import Headers
-from starlette.requests import Request
+from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.types import Receive, Scope, Send
@@ -295,13 +295,47 @@ class Remote:
                 headers={"WWW-Authenticate": 'Bearer realm="kataster"'},
             )(scope, receive, send)
         scope["tenant"] = tenant
-        # shortcut: one replica serializes requests; use a shared queue before scaling.
-        if self.pending >= 8:
+        # Legacy GET streams are optional; modern subscriptions use POST.
+        if scope["path"] == "/mcp" and scope["method"] != "POST":
             return await JSONResponse(
-                {"error": "Server busy, retry shortly"},
-                429,
-                headers={"Retry-After": "3"},
+                {"error": "Use POST for stateless MCP"}, 405, headers={"Allow": "POST"}
             )(scope, receive, send)
+        method = None
+        if scope["path"] == "/mcp":
+            raw = bytearray()
+            try:
+                async with asyncio.timeout(15):
+                    async for chunk in Request(scope, receive).stream():
+                        raw.extend(chunk)
+                        if len(raw) > 65536:
+                            return await JSONResponse(
+                                {"error": "MCP body too large"}, 413
+                            )(scope, receive, send)
+            except ClientDisconnect:
+                return
+            except TimeoutError:
+                return await JSONResponse({"error": "Body timeout"}, 408)(
+                    scope, receive, send
+                )
+            try:
+                body = json.loads(raw)
+                method = body.get("method") if isinstance(body, dict) else None
+            except (ValueError, RecursionError):
+                pass  # SDK returns the protocol parse error.
+            original_receive, delivered = receive, False
+
+            async def replay_receive():
+                nonlocal delivered
+                if not delivered:
+                    delivered = True
+                    return {
+                        "type": "http.request",
+                        "body": bytes(raw),
+                        "more_body": False,
+                    }
+                return await original_receive()
+
+            receive = replay_receive
 
         async def private_send(message):
             if message["type"] == "http.response.start":
@@ -322,6 +356,17 @@ class Remote:
                         "body": body.replace(str(self.data_dir).encode(), b"[private]"),
                     }
             await send(message)
+
+        # Discovery and 2026 subscriptions/listen never execute provider work.
+        if scope["path"] == "/mcp" and method != "tools/call":
+            return await self.apps[tenant](scope, receive, private_send)
+        # shortcut: one replica serializes requests; use a shared queue before scaling.
+        if self.pending >= 8:
+            return await JSONResponse(
+                {"error": "Server busy, retry shortly"},
+                429,
+                headers={"Retry-After": "3"},
+            )(scope, receive, send)
 
         self.pending += 1
         try:
@@ -358,6 +403,7 @@ def main() -> None:
         port=8000,
         access_log=False,
         proxy_headers=False,
+        limit_concurrency=64,
     )
 
 
