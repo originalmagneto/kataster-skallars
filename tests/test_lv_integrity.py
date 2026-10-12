@@ -66,7 +66,7 @@ async def test_invalid_ico_is_rejected_even_with_empty_cache(tmp_path, ico):
 )
 async def test_reimport_does_not_destroy_better_cached_lv(tmp_path, change):
     server = _offline(tmp_path)
-    original = (FIX / "lv_vypis_anon.html").read_text()
+    original = (FIX / "lv_vypis_anon.html").read_text(encoding="utf-8")
     await _call(server, "kataster_lv_import", {"html": original})
     before = server.app_state.osoby.get(IMPORT, LV_VER, "871541|1926", None)
     candidate = (
@@ -94,7 +94,7 @@ async def test_reimport_does_not_destroy_better_cached_lv(tmp_path, change):
 @pytest.mark.anyio
 async def test_newer_equivalent_scope_replaces_old_lv(tmp_path):
     server = _offline(tmp_path)
-    original = (FIX / "lv_vypis_anon.html").read_text()
+    original = (FIX / "lv_vypis_anon.html").read_text(encoding="utf-8")
     await _call(server, "kataster_lv_import", {"html": original})
     newer = original.replace("6.10.2026 18:00:00", "7.10.2026 18:00:00")
     await _call(server, "kataster_lv_import", {"html": newer})
@@ -107,7 +107,7 @@ async def test_reduced_owner_table_does_not_replace_existing(tmp_path):
     import re
 
     server = _offline(tmp_path)
-    original = (FIX / "lv_vypis_anon.html").read_text()
+    original = (FIX / "lv_vypis_anon.html").read_text(encoding="utf-8")
     await _call(server, "kataster_lv_import", {"html": original})
     before = server.app_state.osoby.get(IMPORT, LV_VER, "871541|1926", None)
     # Remove the second synthetic owner row only.

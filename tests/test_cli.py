@@ -25,6 +25,7 @@ def run_cli(tmp_path, *args):
         cwd=tmp_path,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         env={**os.environ, "PYTHONUTF8": "1"},
     )
     return result, json.loads(result.stdout)
@@ -91,3 +92,14 @@ def test_standalone_data_dir_is_separate_and_configurable(monkeypatch, tmp_path)
     assert cache.standalone_data_dir().name == "kataster-skallars"
     monkeypatch.setenv("SK_KATASTER_DATA_DIR", str(tmp_path / "isolated"))
     assert cache.standalone_data_dir() == tmp_path / "isolated"
+
+
+def test_cli_json_is_utf8_even_with_legacy_console_encoding(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "-m", "kataster_mcp.cli", "--json", "ku", "resolve", "871541"],
+        cwd=tmp_path,
+        capture_output=True,
+        env={**os.environ, "PYTHONIOENCODING": "ascii", "PYTHONUTF8": "0"},
+    )
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert json.loads(result.stdout.decode("utf-8"))["data"]["nazov"] == "Vyšný Kubín"
