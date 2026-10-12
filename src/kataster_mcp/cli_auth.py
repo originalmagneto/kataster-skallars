@@ -84,6 +84,8 @@ def discover(client: httpx.Client, resource: str, issuer: str | None = None) -> 
     if issuer is not None and issuer != expected:
         raise failure("OAuth issuer sa zmenil. Vyžaduje sa nové prihlásenie.")
     parsed_issuer = urlsplit(expected)
+    if parsed.scheme == "https" and parsed_issuer.scheme != "https":
+        raise failure("HTTPS resource vyžaduje HTTPS OAuth issuer.")
     metadata_url = f"{parsed_issuer.scheme}://{parsed_issuer.netloc}/.well-known/oauth-authorization-server{parsed_issuer.path.rstrip('/')}"
     metadata = request_json(client, "GET", metadata_url)
     if metadata.get("issuer") != expected or "S256" not in metadata.get(
@@ -134,9 +136,7 @@ def locked(path: Path):
         if os.name == "nt":
             import msvcrt
 
-            if os.fstat(handle.fileno()).st_size == 0:
-                handle.write(b"\0")
-                handle.flush()
+            # Windows range locks may extend past EOF, so no initial write is needed.
             handle.seek(0)
             deadline = time.monotonic() + 360
             while True:

@@ -405,3 +405,121 @@ def test_logout_clears_corrupt_credentials(tmp_path):
     path.write_text('{"access_token":"synthetic-secret"}')
     assert auth.logout(path, RESOURCE)["revoked"] is False
     assert not path.exists()
+
+
+def test_https_resource_rejects_http_loopback_issuer_before_contact():
+    requests = []
+
+    def response(request):
+        requests.append(request)
+        if request.url.host == "resource.example":
+            return httpx.Response(
+                200,
+                json={
+                    "resource": RESOURCE,
+                    "authorization_servers": ["http://127.0.0.1:9876"],
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "issuer": "http://127.0.0.1:9876",
+                "authorization_endpoint": "http://127.0.0.1:9876/auth",
+                "token_endpoint": "http://127.0.0.1:9876/token",
+                "code_challenge_methods_supported": ["S256"],
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(response)) as client:
+        with pytest.raises(KatasterError):
+            auth.discover(client, RESOURCE)
+    assert len(requests) == 1
+
+
+def test_explicit_http_loopback_resource_preserves_local_discovery():
+    resource = "http://127.0.0.1:8765/mcp"
+    issuer = "http://127.0.0.1:9876"
+
+    def response(request):
+        if request.url.port == 8765:
+            return httpx.Response(
+                200, json={"resource": resource, "authorization_servers": [issuer]}
+            )
+        return httpx.Response(
+            200,
+            json={
+                "issuer": issuer,
+                "authorization_endpoint": issuer + "/auth",
+                "token_endpoint": issuer + "/token",
+                "code_challenge_methods_supported": ["S256"],
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(response)) as client:
+        assert auth.discover(client, resource)["issuer"] == issuer
+
+
+def test_windows_empty_lock_contention_never_writes_before_acquiring(
+    tmp_path, monkeypatch
+):
+    import sys
+    from types import SimpleNamespace
+
+    events = []
+    owned = False
+
+    class Handle:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def fileno(self):
+            return 42
+
+        def seek(self, offset):
+            assert offset == 0
+
+        def write(self, value):
+            assert (
+                owned
+            ), "The empty lock must not be initialized before acquiring the Windows range lock"
+
+        def flush(self):
+            assert owned
+
+    def locking(fd, mode, length):
+        nonlocal owned
+        assert (fd, length) == (42, 1)
+        events.append(mode)
+        if mode == "lock":
+            if len(events) == 1:
+                raise OSError("synthetic competing first process")
+            owned = True
+        else:
+            owned = False
+
+    monkeypatch.setattr(auth, "private_directory", lambda path: None)
+    monkeypatch.setattr(
+        auth,
+        "os",
+        SimpleNamespace(
+            name="nt",
+            O_CREAT=os.O_CREAT,
+            O_RDWR=os.O_RDWR,
+            open=lambda *args: 42,
+            fdopen=lambda *args: Handle(),
+            fstat=lambda fd: SimpleNamespace(st_size=0),
+        ),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "msvcrt",
+        SimpleNamespace(locking=locking, LK_NBLCK="lock", LK_UNLCK="unlock"),
+    )
+    monkeypatch.setattr(auth.time, "sleep", lambda seconds: None)
+    with auth.locked(tmp_path / "oauth.json"):
+        assert owned
+    assert events == ["lock", "lock", "unlock"]
+    assert not owned
