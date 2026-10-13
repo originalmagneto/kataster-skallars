@@ -1,8 +1,22 @@
-> Súkromný SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.5.0, upstream autorstvo a MIT licencia zachované.
+> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.5.0, upstream autorstvo a MIT licencia zachované.
 
 # Kataster SKALLARS
 
-Súkromná distribúcia MCP + CLI odvodená od `braklo/kataster-mcp` (MIT). Aktuálny lokálny pilot, inštalácia a hranice implementácie: [docs/local-pilot.md](docs/local-pilot.md). Nasleduje pôvodná upstream dokumentácia; jej inštalačné URL smerujú na upstream.
+Distribúcia MCP + CLI odvodená od `braklo/kataster-mcp` (MIT).
+
+## Inštalácia (SKALLARS)
+
+| Kde | Ako |
+|---|---|
+| Claude Code, Codex | plugin `kataster-skallars` z marketplace `originalmagneto/skallars-marketplace` (remote MCP + skill) |
+| aplikácia Claude, Cowork | vlastný konektor `https://mcp-kataster.aittorney.online/mcp` |
+| CLI `sk-kataster` (raz na počítač) | `uv tool install git+https://github.com/originalmagneto/kataster-skallars`, potom `sk-kataster --json remote login` |
+
+Remote MCP má rovnakých 11 nástrojov ako lokálny server. CLI je potrebné na nahratie lokálneho LV súboru
+(HTML/PDF) na remote server (`sk-kataster --json remote upload CESTA`); ostatné funguje aj bez neho.
+Prihlásenie je spoločný SKALLARS účet na `auth.aittorney.online`.
+
+ Aktuálny lokálny pilot, inštalácia a hranice implementácie: [docs/local-pilot.md](docs/local-pilot.md). Nasleduje pôvodná upstream dokumentácia; jej inštalačné URL smerujú na upstream.
 
 # kataster-mcp
 
