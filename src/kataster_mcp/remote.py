@@ -22,7 +22,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.types import Receive, Scope, Send
 
-from . import __version__, lv
+from . import __version__, lv, mapa
 from .cache import PERSONAL_TTL, Cache, Quota, purge_files
 from .cli import compact
 from .envelope import Envelope
@@ -77,9 +77,8 @@ async def parse_upload(raw: bytes) -> dict:
 
 def remote_tools(server, directory: Path, *, oauth: bool = False) -> None:
     server.remove_tool("kataster_lv_import")
-    server.remove_tool(
-        "kataster_mapa"
-    )  # Local filesystem exports need an authenticated download API first.
+    server.remove_tool("kataster_mapa")  # local version writes files; the remote one returns them inline
+    mapa.register_remote(server, server.app_state)
     server.remove_tool("kataster_status")
 
     @server.tool()

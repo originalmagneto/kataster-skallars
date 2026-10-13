@@ -120,7 +120,7 @@ def test_limits_and_safe_discovery(remote):
         json={"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
     ).json()
     tools = {t["name"]: t for t in result["result"]["tools"]}
-    assert "kataster_mapa" not in tools
+    assert "out_dir" not in tools["kataster_mapa"]["inputSchema"]["properties"]
     assert "path" not in tools["kataster_lv_import"]["inputSchema"]["properties"]
     assert "data_dir" not in json.dumps(call(client, "kataster_status", {}))
 

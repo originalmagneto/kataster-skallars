@@ -123,7 +123,7 @@ def test_remote_cli_roundtrip(tmp_path):
                 timeout=2,
             )
             assert response.status_code == 200
-            assert len(response.json()["result"]["tools"]) == 10
+            assert len(response.json()["result"]["tools"]) == 11
         assert cli("tools")[0] == 0
         code, result = cli("call", "kataster_ku", '{"query":"Záhorská Bystrica"}')
         assert code == 0 and result["data"][0]["kod"] == "871796"

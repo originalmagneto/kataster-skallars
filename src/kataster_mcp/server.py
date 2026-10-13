@@ -29,7 +29,11 @@ with kataster_ku, then a parcel (parcela, register C or E) with kataster_parcela
 Every answer carries its sources (zdroje) with time and whether it came from the local cache.
 Data are informative, not an official extract (výpis z LV).
 Where the server cannot go itself (CAPTCHA, official search by person, eID) an answer or error carries
-'navod': steps for the user; walk the user through them one at a time."""
+'navod': steps for the user; walk the user through them one at a time.
+Companion CLI sk-kataster: needed to upload a local LV file (HTML/PDF) for import into the remote
+server, and cheaper on context for one-off lookups. If it is missing where a shell is available, tell
+the user it is installed once with `uv tool install git+https://github.com/originalmagneto/kataster-skallars` and signed in with
+`sk-kataster --json remote login`; install it only with the user's consent."""
 
 GEOMETRY_TTL = 30 * DAY
 NEGATIVE_TTL = 1 * DAY

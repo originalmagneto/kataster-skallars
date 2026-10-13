@@ -1,6 +1,6 @@
 # Vydania a izolovaná obnova
 
-Kataster backend/CLI má verziu 0.6.0, Auth 0.2.0. Pluginové manifesty majú
+Kataster backend/CLI má verziu 0.7.0, Auth 0.2.0. Pluginové manifesty (0.2.0) majú
 samostatný životný cyklus a táto zmena ich nemení.
 
 CI nasadzuje iba úspešne testovaný push do main. Kataster čaká na celú OS/Python
