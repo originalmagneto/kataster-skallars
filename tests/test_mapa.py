@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import json
+from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -35,7 +36,8 @@ def test_local_map_writes_requested_files(tmp_path, offline):
         "kataster_mapa", {**REQUEST, "format": ["png", "geojson"], "out_dir": str(out)}))
     data = json.loads(result.content[0].text)["data"]
     assert set(data["subory"]) == {"png", "geojson"}
-    assert (out / data["subory"]["png"].rsplit("/", 1)[1]).read_bytes()[:4] == b"\x89PNG"
+    png = Path(data["subory"]["png"])
+    assert png.parent == out and png.read_bytes()[:4] == b"\x89PNG"
     assert data["parcely"] == ["E 599/3"]
 
 
