@@ -39,7 +39,7 @@ Správca pridá záznam do Dokploy environment, zachová existujúce záznamy a 
 - Upload HTML/PDF najviac 5 MiB, najviac 50 súborov na používateľa; originály expirujú po 24 hodinách. Parser: vlastný proces, 20 s wall time, na Linuxe 15 s CPU a 512 MiB adresného priestoru, PDF do 100 strán, normalizovaný výsledok do 2 MiB.
 - Importovaná osobná cache má TTL 7 dní a limit SQLite 64 MiB na používateľa. Každý má vlastnú databázu. Purge beží každých 60 s aj bez requestov a zahŕňa už odobratých používateľov. Reimport môže obnoviť retenčný čas. SQLite secure_delete nie je záruka vymazania zo snapshotov/backupov hostiteľa.
 - Kontajner beží ako UID 10001, read-only root, bez capabilities, no-new-privileges, 1 GiB RAM, 1 CPU, 64 procesov. Dáta sú na pomenovanom lokálnom volume, temp je obmedzený tmpfs. Žiadne hostiteľské porty sa nepublikujú; HTTPS smeruje cez Dokploy Traefik.
-- Remote neprijíma `path`, `paths`, `html` ani `out_dir`. Mapový export je v pilote dostupný iba lokálne. Na remote je 10 nástrojov.
+- Remote neprijíma `path`, `paths`, `html` ani `out_dir`. `kataster_mapa` nič neukladá na server: PNG vráti ako obrázok, HTML/GeoJSON/KML ako vložené zdroje, spolu najviac 8 MiB. Na remote je 11 nástrojov, rovnako ako lokálne.
 - Neúplný LV nesmie viesť k záveru „bez tiarch“. Zmena rozsahu alebo vlastníkov môže byť odmietnutá konzervatívnou ochranou cache; vtedy sa vráti `preserved_existing`. Nemenná história verzií a riešenie konfliktov ešte nie sú implementované.
 
 ## Nasadenie a aktualizácie
