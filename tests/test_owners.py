@@ -133,3 +133,34 @@ async def test_failed_attempt_counts_and_snapshot_is_private(tmp_path):
     assert s.app_state.quota.used() == 1
     snaps = list((tmp_path / "snapshots").iterdir())
     assert len(snaps) == 1 and (not POSIX or stat.S_IMODE(snaps[0].stat().st_mode) == 0o600)
+
+
+@pytest.mark.parametrize(("filename", "shares"), [
+    ("eskn_detail_c_anon.html", ["1/1"]),
+    ("eskn_detail_c4_anon.html", ["1/4"] * 4),
+])
+def test_register_c_owner_rows(filename, shares):
+    page = (FIX / filename).read_text(encoding="utf8")
+    owners = eskn.parse_detail(page)["vlastnici"]
+    assert [owner["podiel"] for owner in owners] == shares
+    assert [owner["poradie"] for owner in owners] == list(range(1, len(shares) + 1))
+
+
+@pytest.mark.anyio
+async def test_unread_owner_section_is_drift(tmp_path):
+    page = DETAIL.replace("<h3>VLASTNÍK", "<h3>Účastníci")
+    s = server(tmp_path, [], detail=page)
+    with pytest.raises(ToolError, match="parser_drift"):
+        await s.call_tool("kataster_vlastnici", {"ku": "871541", "cislo": "E 503"})
+    assert s.app_state.osoby.stats() == {}
+
+
+@pytest.mark.anyio
+async def test_empty_owner_section_warns_and_is_not_cached(tmp_path):
+    start = DETAIL.index("<ul>", DETAIL.index("VLASTNÍK"))
+    end = DETAIL.index("</ul>", start) + len("</ul>")
+    s = server(tmp_path, [], detail=DETAIL[:start] + DETAIL[end:])
+    out = await _call(s, "kataster_vlastnici", {"ku": "871541", "cislo": "E 503"})
+    assert out["data"]["vlastnici"] == []
+    assert any("lists no owner" in w for w in out["varovania"])
+    assert s.app_state.osoby.stats() == {}
