@@ -1,7 +1,9 @@
 # Vydania a izolovaná obnova
 
-Kataster backend/CLI má verziu 0.7.1, Auth 0.2.0. Pluginové manifesty (0.2.0) majú
+Kataster backend/CLI má verziu 0.8.0, Auth 0.2.0. Pluginové manifesty (0.2.0) majú
 samostatný životný cyklus a táto zmena ich nemení.
+
+Verzia 0.8.0 číta vlastníkov bytov a nebytových priestorov z uloženého náhľadu HTML a výpisu HTML/PDF. V CLI zobrazí jednotky a podiely príkaz `sk-kataster --json lv inspect CESTA --full`. Prehľad osoby používa novú verziu parsera. Ak má opäť zahŕňať staršie importy, treba znovu importovať pôvodné dokumenty.
 
 CI nasadzuje iba úspešne testovaný push do main. Kataster čaká na celú OS/Python
 matrix, Auth na npm testy, audit a Docker build. Release job má contents:write,

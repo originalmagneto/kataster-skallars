@@ -107,6 +107,7 @@ def compact(data: dict[str, Any]) -> dict[str, Any]:
         "lv": data["lv"],
         "hlavicka": data["hlavicka"],
         "zdroj_typ": data["zdroj_typ"],
+        **({"jednotky": data["jednotky_pocet"]} if "jednotky_pocet" in data else {}),
         "parcely": len(data["cast_a"]),
         "stavby": len(data.get("stavby", [])),
         "vlastnici": len(data["cast_b"]["vlastnici"]),
@@ -127,6 +128,8 @@ def inspect_file(path: Path, full: bool) -> dict[str, Any]:
     env.warn(
         "Rozsah výpisu nie je overený ako úplný. Stav tiarch sa týka iba prečítanej časti C."
     )
+    if data.get("jednotky_poznamka"):
+        env.warn(data["jednotky_poznamka"])
     if data["tarchy"] == "unknown":
         env.warn("Chýbajúca alebo prázdna časť C nepotvrdzuje neprítomnosť tiarch.")
     return env.ok(data if full else compact(data))
