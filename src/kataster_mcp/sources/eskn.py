@@ -78,10 +78,13 @@ def parse_identify(data: dict, register: str, number: str) -> dict:
 
 _LI = re.compile(r"<li[^>]*>\s*([^<:]{2,80}?):\s*(.*?)</li>", re.S)
 _TAG = re.compile(r"<[^>]+>")
-_OWNER = re.compile(
-    r"<li[^>]*>\s*<span[^>]*>\s*<span[^>]*>\s*(\d+)\.\s*<a[^>]*ucastnik-link[^>]*>(.*?)</a>.*?Podiel:\s*([0-9]+\s*/\s*[0-9]+)",
-    re.S,
-)
+_PERSON = re.compile(r'<a[^>]*class="[^"]*(?<![\w-])ucastnik-link[^"]*"[^>]*>(.*?)</a>', re.S)
+_BSM_PERSON = re.compile(r'<a[^>]*class="[^"]*\bbsm-ucastnik-link[^"]*"[^>]*>(.*?)</a>', re.S)
+_OWNER_LINK = re.compile(r'<a[^>]*class="[^"]*ucastnik-link')  # also bsm-ucastnik-link: one per person
+_ORDER = re.compile(r"(BSM\s+)?(\d+)\.")
+_SHARE = re.compile(r"Podiel:\s*([0-9]+\s*/\s*[0-9]+)")
+_H3 = re.compile(r"<h3[^>]*>(.*?)</h3>", re.S)
+_LI_ANY = re.compile(r"<li[^>]*>(.*?)</li>", re.S)
 _VALID = re.compile(r'title="Údaje platné k dátumu">\s*([0-9.]+)\s*<')
 _DATE = re.compile(r"^\d{2}\.\d{2}\.\d{4}$")
 
@@ -114,12 +117,35 @@ def split_person(text: str) -> dict:
     return out
 
 
+def sections(page: str) -> list[tuple[str, str]]:
+    """Split the page at its <h3> headings: [(heading text, html up to the next heading)]."""
+    heads = list(_H3.finditer(page))
+    return [(_text(m.group(1)), page[m.end(): heads[i + 1].start() if i + 1 < len(heads) else len(page)])
+            for i, m in enumerate(heads)]
+
+
+def _owner_row(li: str) -> list[dict]:
+    """One owner row: "1. <person> Podiel: a/b", or BSM: "BSM 1. <spouse> <spouse> Podiel: a/b"
+    (the second spouse has class bsm-ucastnik-link; seen on the building detail 2026-11)."""
+    head = _text(li[: li.rfind("<a", 0, li.find("ucastnik-link"))])
+    order, share = _ORDER.fullmatch(head), _SHARE.search(li)
+    persons = _PERSON.findall(li) + _BSM_PERSON.findall(li)
+    if order is None or share is None or not persons:
+        raise ValueError("owner row without order, share or person")
+    bsm = bool(order.group(1)) or len(persons) > 1
+    return [{"poradie": int(order.group(2)), **split_person(_text(person)), "podiel": share.group(1).replace(" ", ""),
+             **({"bsm": True} if bsm else {})} for person in persons]
+
+
 def parse_detail(page: str) -> dict:
+    """Parcel detail by sections. The owner heading has changed case before ("VLASTNÍK" -> "Vlastník"),
+    so headings are matched case-insensitively. Drift: person links or shares on the page that were not read.
+    An owner section with no person link and no share gives an empty list (the caller warns and does not cache)."""
     if "Informácie o parcele" not in page:
         raise ValueError("not a parcel detail page")
-    info_start = page.index("Informácie o parcele")
-    owners_start = page.find("VLASTN", info_start)
-    info = page[info_start: owners_start if owners_start > 0 else None].replace("<sup>2</sup>", "2")
+    parts = sections(page)
+    info = next((body for title, body in parts if title == "Informácie o parcele"), "")
+    info = info.replace("<sup>2</sup>", "2")
     fields: dict = {}
     other: dict = {}
     for label, value in _LI.findall(info):
@@ -134,15 +160,28 @@ def parse_detail(page: str) -> dict:
         raise ValueError("LV number not found")
     if fields.get("vymera_m2"):
         fields["vymera_m2"] = int(fields["vymera_m2"])
+
+    owner_parts = [body for title, body in parts if title.casefold().startswith("vlastn")]
     owners = []
-    if owners_start > 0:
-        for order, person, share in _OWNER.findall(page[owners_start:]):
-            owners.append({"poradie": int(order), **split_person(_text(person)), "podiel": share.replace(" ", "")})
+    for body in owner_parts:
+        items = [li for li in _LI_ANY.findall(body) if "ucastnik-link" in li]
+        if len(items) != body.count("Podiel:"):
+            raise ValueError(f"owner section: {len(items)} owner rows, {body.count('Podiel:')} shares on the page")
+        for li in items:
+            owners.extend(_owner_row(li))
+
+    # Never report fewer owners than the page links to (e.g. an owner heading renamed to something unknown):
+    # an incomplete list would be cached as a valid answer.
+    links = len(_OWNER_LINK.findall(page))
+    if links > len(owners):
+        raise ValueError(f"page has {links} owner links but {len(owners)} owners were parsed")
+
     valid = _VALID.findall(page)
     return {
         **fields,
         "ostatne": other,
         "vlastnici": owners,
+        "vlastnici_sekcia": bool(owner_parts),
         "stav_k": valid[0] if valid else None,
         "spravcovia_najomcovia_tarchy": "nie sú v detaile parcely, len vo výpise LV",
     }
@@ -156,5 +195,9 @@ def parse_identify_safe(data: dict, register: str, number: str) -> dict:
 
 
 PARSERS_IDENTIFY = (parse_identify, _null)
-PARSERS_DETAIL = (parse_detail, split_person, _text)
-PARSER_DETAIL_REGEXES = (_LI.pattern, _OWNER.pattern, _VALID.pattern, _DATE.pattern, json.dumps(_LABELS, ensure_ascii=False))
+PARSERS_DETAIL = (parse_detail, sections, _owner_row, split_person, _text)
+PARSER_DETAIL_REGEXES = (
+    _LI.pattern, _TAG.pattern, _PERSON.pattern, _BSM_PERSON.pattern, _OWNER_LINK.pattern,
+    _ORDER.pattern, _SHARE.pattern, _H3.pattern, _LI_ANY.pattern, _VALID.pattern, _DATE.pattern,
+    json.dumps(_LABELS, ensure_ascii=False),
+)

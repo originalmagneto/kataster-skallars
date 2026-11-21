@@ -135,7 +135,12 @@ async def lookup_owners(app, env: Envelope, ku: str, cislo: str, register: str =
         **detail,
     }
     url = f"{eskn.DETAIL_URL[reg]}?id={ident['id']}"
-    ts = app.osoby.put(eskn.SOURCE_DETAIL, DETAIL_VER, key, {"url": url, "vysledok": result})
+    if result["vlastnici"]:
+        ts = app.osoby.put(eskn.SOURCE_DETAIL, DETAIL_VER, key, {"url": url, "vysledok": result})
+    else:
+        ts = time.time()
+        reason = "The owner section lists no owner." if result["vlastnici_sekcia"] else "The parcel detail has no owner section."
+        env.warn(f"{reason} Check the LV with kataster_lv. This result is not cached.")
     env.source(eskn.SOURCE_DETAIL, url, oficialny=False, z_cache=False, cas=ts_iso(ts))
     env.warn(WARN_UNOFFICIAL)
     return {**result, "limit": _limit_info(app)}
