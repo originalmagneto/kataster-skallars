@@ -104,6 +104,8 @@ def remote_tools(server, directory: Path, *, oauth: bool = False) -> None:
         env.warn(
             "Rozsah výpisu nie je overený ako úplný. Chýbajúca časť C nepotvrdzuje neprítomnosť tiarch."
         )
+        if data.get("jednotky_poznamka"):
+            env.warn(data["jednotky_poznamka"])
         if not saved:
             env.warn(
                 "Uložený výpis má novší dátum alebo širší rozsah. Výsledok opisuje vstup, prehľad používa pôvodný výpis."

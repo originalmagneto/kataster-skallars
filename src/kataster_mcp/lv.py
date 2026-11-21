@@ -99,15 +99,18 @@ def can_replace(candidate: dict, previous: dict) -> bool:
     for part in ("cast_a", "cast_b", "cast_c"):
         if old.get(part) == "read" and new.get(part) != "read":
             return False
-    def owner_key(owner: dict) -> tuple[str, str, str]:
+    def owner_key(owner: dict) -> tuple:
+        unit = owner.get("jednotka") or {}
         return tuple(" ".join((owner.get(k) or "").casefold().split())
-                     for k in ("meno", "datum_narodenia", "ico"))
+                     for k in ("meno", "datum_narodenia", "ico")) + tuple(
+            unit.get(k) for k in ("druh", "vchod", "cislo", "supisne_cislo"))
 
     before_owners = {owner_key(o) for o in previous["cast_b"]["vlastnici"]}
     after_owners = {owner_key(o) for o in candidate["cast_b"]["vlastnici"]}
     if not before_owners <= after_owners:
         return False
-    for key, fields in (("cast_a", ("register", "cislo")), ("stavby", ("supisne_cislo", "parcela"))):
+    for key, fields in (("cast_a", ("register", "cislo")), ("stavby", ("supisne_cislo", "parcela")),
+                        ("jednotky", ("druh", "vchod", "cislo", "supisne_cislo"))):
         before = {tuple(row.get(k) for k in fields) for row in previous.get(key, [])}
         after = {tuple(row.get(k) for k in fields) for row in candidate.get(key, [])}
         if not before <= after:
@@ -133,6 +136,7 @@ def _summary(ku: str, data: dict, files: list[str], ts: float) -> dict:
         "ku_kod": ku, "lv": data["lv"], "zdroj_typ": data.get("zdroj_typ"), "subory": files,
         "udaje_platne_k": data["hlavicka"].get("Údaje platné k"), "parcely": len(data.get("cast_a") or []),
         "stavby": len(data.get("stavby") or []),
+        **({"jednotky": data["jednotky_pocet"]} if "jednotky_pocet" in data else {}),
         "vlastnici": len(b.get("vlastnici") or []), "importovane": ts_iso(ts),
     }
 
@@ -245,6 +249,8 @@ def import_lv(cache: Cache, *, path: str | None = None, paths: list[str] | None 
                 best[key] = (data, [origin])
         out = []
         for (ku, lv_no), (data, names) in best.items():
+            if data.get("jednotky_poznamka"):
+                env.warn(data["jednotky_poznamka"])
             if data.get("stavby_neprecitane"):
                 env.warn(f"LV {lv_no}: the extract lists buildings (stavby) that could not be read; "
                          "the LV preview (Náhľad LV) of the same LV is read reliably.")

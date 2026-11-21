@@ -9,6 +9,7 @@ import json
 import re
 import time
 import unicodedata
+from collections import Counter
 from fractions import Fraction
 from typing import Annotated, Literal
 
@@ -94,6 +95,7 @@ def overview(app, want: list[str], date: str | None, ku_kod: str | None, ico: st
         area = sum(p["vymera_m2"] or 0 for p in parcels)
         buildings = [{k: b.get(k) for k in ("supisne_cislo", "parcela", "druh_stavby", "popis_stavby", "lv_pozemku")}
                      for b in data.get("stavby") or []]
+        unit_counts = Counter(tuple(sorted(o["jednotka"].items())) for o in owners if o.get("jednotka"))
         for o in mine:
             if date and o.get("datum_narodenia") not in (None, date):
                 continue
@@ -106,6 +108,11 @@ def overview(app, want: list[str], date: str | None, ku_kod: str | None, ico: st
                 "ostatni_spoluvlastnici": len(owners) - 1, "udaje_platne_k": head.get("Údaje platné k"),
                 "importovane": ts_iso(ts), "platne_do": ts_iso(ts + PERSONAL_TTL),
             }
+            if unit := o.get("jednotka"):
+                entry.update(
+                    jednotka=unit, parcely=[], stavby=[], vymera_lv_m2=None, vymera_podielom_m2=None,
+                    ostatni_spoluvlastnici=unit_counts[tuple(sorted(unit.items()))] - 1,
+                )
             if date and o.get("datum_narodenia") is None and not ico:
                 unclear.append({"meno": o.get("meno"), "adresa": o.get("adresa"), **entry})
                 continue
@@ -117,7 +124,7 @@ def overview(app, want: list[str], date: str | None, ku_kod: str | None, ico: st
             person["lv"].append(entry)
     for p in people.values():
         p["lv"].sort(key=lambda e: (e["ku_kod"], int(e["lv"]) if str(e["lv"]).isdigit() else 0))
-        p["pocet_lv"] = len(p["lv"])
+        p["pocet_lv"] = len({(e["ku_kod"], e["lv"]) for e in p["lv"]})
         p["pocet_parciel"] = sum(len(e["parcely"]) for e in p["lv"])
         p["pocet_stavieb"] = sum(len(e["stavby"]) for e in p["lv"])
         p["vymera_podielom_spolu_m2"] = round(sum(e["vymera_podielom_m2"] or 0 for e in p["lv"]), 1)
