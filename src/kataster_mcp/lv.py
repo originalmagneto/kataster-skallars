@@ -227,7 +227,9 @@ def register(mcp, app) -> None:
         One file: returns the parsed LV: header (district, municipality, k.ú., date of data), part A (parcels with
         area, land type, location; codes translated by the legend; buildings in `stavby` with súpisné číslo,
         the parcel under the building, kind and the LV of the land), part B (owners with shares, acquisition titles,
-        notes; administrators and tenants) and part C (encumbrances, ťarchy). zdroj_typ tells the input:
+        notes; administrators and tenants) and part C (encumbrances, ťarchy). For flats and non-residential premises,
+        `jednotky` lists the units with their entrance, floor and share of the common parts. Each unit
+        owner's `jednotka` identifies the unit to which their ownership share applies. zdroj_typ tells the input:
         vypis_lv_html, vypis_lv_pdf or nahlad_lv (the preview has no administrators/tenants section).
         A folder or several paths: a summary per LV (the same LV twice is merged: newer data, extract before
         preview), unreadable files are listed in varovania. Makes no network request. Results are kept in the

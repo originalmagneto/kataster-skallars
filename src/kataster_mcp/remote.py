@@ -84,7 +84,12 @@ def remote_tools(server, directory: Path, *, oauth: bool = False) -> None:
 
     @server.tool()
     async def kataster_lv_import(file_id: str, full: bool = False) -> dict:
-        """Import own uploaded LV using file_id from POST /uploads. No local paths. Compact by default."""
+        """Import own uploaded LV using file_id from POST /uploads. No local paths. Compact by default.
+
+        With full=true, `jednotky` lists flats and non-residential premises with their entrance, floor and
+        share of the common parts. Each unit owner's `jednotka` identifies the unit to which their ownership
+        share applies.
+        """
         if not FILE_ID.fullmatch(file_id):
             raise ToolError("Neplatný file_id.")
         path = directory / "uploads" / file_id
