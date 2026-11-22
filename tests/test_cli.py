@@ -106,3 +106,31 @@ def test_cli_json_is_utf8_even_with_legacy_console_encoding(tmp_path):
     )
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
     assert json.loads(result.stdout.decode("utf-8"))["data"]["nazov"] == "Vyšný Kubín"
+
+
+def test_doctor_reads_shared_quota_without_writing(tmp_path):
+    import sqlite3
+    from kataster_mcp.cache import today
+
+    _, fresh = run_cli(tmp_path, "doctor")
+    limits = Path(fresh["data"]["limits_dir"])
+    assert limits.is_relative_to(tmp_path) and not limits.exists()
+    quota = fresh["data"]["kvota_vlastnici"]
+    assert quota == {"den": today(), "pouzite": 0, "limit": 50, "zostava": 50}
+    limits.mkdir(parents=True)
+    state = limits / "stav.sqlite"
+    with sqlite3.connect(state) as conn:
+        conn.execute("CREATE TABLE kvota (den TEXT, parcela TEXT)")
+        conn.executemany("INSERT INTO kvota VALUES (?, ?)", [(today(), "one"), ("2000-01-01", "two")])
+    before = state.read_bytes(), state.stat().st_mtime_ns
+    result, out = run_cli(tmp_path, "doctor")
+    assert result.returncode == 0 and out["data"]["kvota_vlastnici"]["pouzite"] == 1
+    assert (state.read_bytes(), state.stat().st_mtime_ns) == before and not (tmp_path / "data").exists()
+
+
+def test_separate_person_names_match_existing_full_name(tmp_path):
+    run_cli(tmp_path, "lv", "import", str(FIXTURE.resolve()))
+    result, split = run_cli(tmp_path, "person", "overview", "--surname", "Vlastník", "--first-name", "Fiktívny")
+    _, full = run_cli(tmp_path, "person", "overview", "--name", "Fiktívny Vlastník")
+    assert result.returncode == 0 and split["data"]["osoby"] == full["data"]["osoby"]
+    assert split["data"]["osoby"][0]["pocet_parciel"] == 26
