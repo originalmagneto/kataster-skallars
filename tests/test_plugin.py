@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_REF = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
 
 
+pytestmark = pytest.mark.usefixtures("isolated_subprocess_limits")
+
+
 @pytest.fixture
 def packages(tmp_path):
     subprocess.run([

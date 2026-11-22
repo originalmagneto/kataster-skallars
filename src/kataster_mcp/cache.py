@@ -2,7 +2,7 @@
 
 Two files under the data dir (0700):
 - cache.sqlite  public data (geometry, layers)
-- osoby.sqlite  personal data (owners, land users) and the quota, always 0600
+- osoby.sqlite  personal data (owners, land users), always 0600
 
 Every entry is keyed by (source, parser version, key). The parser version is a hash
 of the parser's source code, so fixing a parser silently invalidates old entries.
@@ -49,7 +49,30 @@ def standalone_data_dir() -> Path:
     return Path(configured).expanduser() if configured else default_data_dir().with_name("kataster-skallars")
 
 
-# Binary descriptors preserve raw bytes on Windows.
+def default_limits_dir(platform: str | None = None) -> Path:
+    """Fixed per-user directory for the state of the limits (daily owners quota, pause across processes, portal
+    block). Unlike the data directory it follows no environment variable or configuration:
+    another data directory or XDG_DATA_HOME must not mean a new quota. Linux and others ~/.local/state/kataster-skallars,
+    macOS ~/Library/Application Support/kataster-skallars-limits, Windows <profile>\\AppData\\Local\\kataster-skallars-limits."""
+    platform = platform or sys.platform
+    home = _home()
+    if platform == "win32":
+        return home / "AppData" / "Local" / "kataster-skallars-limits"
+    if platform == "darwin":
+        return home / "Library" / "Application Support" / "kataster-skallars-limits"
+    return home / ".local" / "state" / "kataster-skallars"
+
+
+def _home() -> Path:
+    """Home directory from the account database on POSIX (not $HOME), the user profile on Windows."""
+    try:
+        import pwd
+        return Path(pwd.getpwuid(os.getuid()).pw_dir)
+    except (ImportError, KeyError, AttributeError):
+        return Path.home()
+
+
+# os.open() on Windows opens the C runtime descriptor in text mode unless O_BINARY is given (0 on POSIX).
 O_BINARY = getattr(os, "O_BINARY", 0)
 
 
@@ -171,6 +194,14 @@ class Quota:
         self.db = db
         db.execute("CREATE TABLE IF NOT EXISTS kvota (den TEXT, parcela TEXT, PRIMARY KEY (den, parcela))")
         db.commit()
+
+    def merge_today(self, legacy: sqlite3.Connection) -> None:
+        """Carry over reservations from a data directory previously used by this account."""
+        if not legacy.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='kvota'").fetchone():
+            return
+        rows = legacy.execute("SELECT den, parcela FROM kvota WHERE den=?", (today(),)).fetchall()
+        with self.db:
+            self.db.executemany("INSERT OR IGNORE INTO kvota VALUES (?, ?)", rows)
 
     def used(self, den: str | None = None) -> int:
         return self.db.execute("SELECT COUNT(*) FROM kvota WHERE den=?", (den or today(),)).fetchone()[0]

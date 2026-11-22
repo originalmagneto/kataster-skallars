@@ -4,6 +4,7 @@
 The public entry point `main()` always uses PUBLIC_POLICY.
 """
 
+import json
 import sys
 import time
 from collections.abc import Callable, Iterable
@@ -15,11 +16,12 @@ from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 
 from . import __version__, ku as ku_mod
-from .cache import DAY, PERSONAL_TTL, Cache, Quota, default_data_dir, parser_version, protection, purge_files, standalone_data_dir, today, ts_iso
+from .cache import DAY, PERSONAL_TTL, Cache, Quota, default_data_dir, default_limits_dir, parser_version, protection, purge_files, standalone_data_dir, today, ts_iso
 from .envelope import Envelope, KatasterError
-from .http import Http
+from .http import BLOCK_PAUSE_S, BLOCK_SOURCE, Http
+from .pacing import Pacer
 from .normalize import parcel_number
-from .policy import PUBLIC_POLICY, Policy
+from .policy import ESKN_HOST, PUBLIC_POLICY, Policy
 from .sources import wfs
 from . import lv, mapa, osoba, owners, skupina, vrstvy
 
@@ -51,25 +53,37 @@ class App:
     osoby: Cache
     quota: Quota
     data_dir: Path
+    limits_dir: Path
 
 
 ExtraTool = Callable[[MCPServer, App], None]
 
 
 def create_server(policy: Policy = PUBLIC_POLICY, extra_tools: Iterable[ExtraTool] = (),
-                  *, data_dir: Path | None = None, http: Http | None = None) -> MCPServer:
+                  *, data_dir: Path | None = None, http: Http | None = None,
+                  limits_dir: Path | None = None, shared_quota: Quota | None = None) -> MCPServer:
     data_dir = data_dir or default_data_dir()
     osoby = Cache(data_dir / "osoby.sqlite", private=True, max_age_s=PERSONAL_TTL)
     purge_files(data_dir / "snapshots", PERSONAL_TTL)
+    cache = Cache(data_dir / "cache.sqlite", private=False)
+    limits_dir = limits_dir or default_limits_dir()
+    http = http or Http(policy)
+    if shared_quota is None:
+        state = Cache(limits_dir / "stav.sqlite", private=True)
+        shared_quota = Quota(state.db)
+        shared_quota.merge_today(osoby.db)
+        _carry_block(cache, state)
+        http.blocks = state
+        http.pacer = Pacer(limits_dir / "tempo")
     app = App(
         policy=policy,
-        http=http or Http(policy),
-        cache=Cache(data_dir / "cache.sqlite", private=False),
+        http=http,
+        cache=cache,
         osoby=osoby,
-        quota=Quota(osoby.db),
+        quota=shared_quota,
+        limits_dir=limits_dir,
         data_dir=data_dir,
     )
-    app.http.blocks = app.cache
     mcp = MCPServer("kataster", instructions=INSTRUCTIONS, version=__version__)
     _register_core(mcp, app)
     for register in extra_tools:
@@ -210,9 +224,23 @@ def _register_core(mcp: MCPServer, app: App) -> None:
             "ciselnik_ku": {"pocet": t["pocet"], "stiahnute": t["stiahnute"]},
             "verzie_parserov": {wfs.SOURCE_ID: WFS_VER, **owners.parser_versions(), **vrstvy.VERSIONS},
             "data_dir": str(app.data_dir.resolve()),
+            "limity_dir": str(app.limits_dir.resolve()),
             "platforma": sys.platform,
             "ochrana_suborov": protection(),
         })
+
+
+def _carry_block(old: Cache, state: Cache) -> None:
+    """Keep the most recent active block, even during simultaneous startup."""
+    hit = old.get(BLOCK_SOURCE, "1", ESKN_HOST, BLOCK_PAUSE_S)
+    if hit:
+        data, ts = hit
+        with state.db:
+            state.db.execute(
+                "INSERT INTO cache VALUES (?, ?, ?, ?, ?) ON CONFLICT(zdroj,ver,kluc) "
+                "DO UPDATE SET ulozene=excluded.ulozene, data=excluded.data WHERE excluded.ulozene > cache.ulozene",
+                (BLOCK_SOURCE, "1", ESKN_HOST, ts, json.dumps(data)),
+            )
 
 
 def _with_ku(p: dict) -> dict:
