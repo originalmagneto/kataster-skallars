@@ -1,7 +1,7 @@
 """Pause between requests to one host across processes (two MCP clients, a CLI call next to a server).
 
 Every host gets its own SQLite file `<dir>/<host>.sqlite` with the wall-clock time of the last request and the
-instance that made it. A request holds the file's write lock (BEGIN IMMEDIATE) from before the pause until its
+instance that made it. A request holds the file's write lock (BEGIN EXCLUSIVE) from before the pause until its
 time is written after the response, so no two processes ever talk to the same host at once, and a long request
 to one host never holds up another host. SQLite's lock is an OS file lock: a crashed process releases it.
 
@@ -46,7 +46,8 @@ class Pacer:
     async def _begin(self, db: sqlite3.Connection) -> None:
         while True:
             try:
-                db.execute("BEGIN IMMEDIATE")
+                # A late SQLite reader must not block the timestamp commit after the request.
+                db.execute("BEGIN EXCLUSIVE")
                 return
             except sqlite3.OperationalError as e:
                 if "locked" not in str(e) and "busy" not in str(e):

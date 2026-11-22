@@ -210,3 +210,21 @@ async def test_queued_request_honours_block_set_while_waiting(tmp_path):
     assert calls == ["/first"]
     await first.aclose()
     await second.aclose()
+
+
+@pytest.mark.anyio
+async def test_reader_cannot_prevent_timestamp_commit(tmp_path):
+    import sqlite3
+    from contextlib import closing
+
+    host = "kataster.skgeodesy.sk"
+    pacer = Pacer(tmp_path)
+    async with pacer.hold(host):
+        pass
+    with closing(sqlite3.connect(tmp_path / f"{host}.sqlite", timeout=0)) as reader:
+        async with pacer.hold(host):
+            reader.execute("BEGIN")
+            with pytest.raises(sqlite3.OperationalError, match="locked"):
+                reader.execute("SELECT * FROM tempo").fetchall()
+            reader.rollback()
+    pacer.close()
