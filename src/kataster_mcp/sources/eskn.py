@@ -2,8 +2,9 @@
 
 - ESRI identify (what GisPortal45 calls on a map click) maps a point to the internal
   parcel ID and administrative units.
-- The parcel detail page (detail_pc / detail_pe) shows the LV number, land type and
-  owners with shares. It does NOT show administrators, tenants or encumbrances.
+- The parcel detail page (detail_pc / detail_pe) shows the LV number, land type,
+  buildings on the parcel (house number only) and owners with shares. It does NOT show
+  administrators, tenants or encumbrances, nor the LV of a building.
 
 Identify must be called on the WFS referencePoint, not on the centroid: the centroid of
 an irregular parcel can fall outside it.
@@ -81,10 +82,12 @@ _TAG = re.compile(r"<[^>]+>")
 _PERSON = re.compile(r'<a[^>]*class="[^"]*(?<![\w-])ucastnik-link[^"]*"[^>]*>(.*?)</a>', re.S)
 _BSM_PERSON = re.compile(r'<a[^>]*class="[^"]*\bbsm-ucastnik-link[^"]*"[^>]*>(.*?)</a>', re.S)
 _OWNER_LINK = re.compile(r'<a[^>]*class="[^"]*ucastnik-link')  # also bsm-ucastnik-link: one per person
+_NO_RECORD = re.compile(r"^Neexistuje záznam")
 _ORDER = re.compile(r"(BSM\s+)?(\d+)\.")
 _SHARE = re.compile(r"Podiel:\s*([0-9]+\s*/\s*[0-9]+)")
 _H3 = re.compile(r"<h3[^>]*>(.*?)</h3>", re.S)
 _LI_ANY = re.compile(r"<li[^>]*>(.*?)</li>", re.S)
+_SUPISNE = re.compile(r"Súpisné číslo:\s*(\S+)")
 _VALID = re.compile(r'title="Údaje platné k dátumu">\s*([0-9.]+)\s*<')
 _DATE = re.compile(r"^\d{2}\.\d{2}\.\d{4}$")
 
@@ -122,6 +125,12 @@ def sections(page: str) -> list[tuple[str, str]]:
     heads = list(_H3.finditer(page))
     return [(_text(m.group(1)), page[m.end(): heads[i + 1].start() if i + 1 < len(heads) else len(page)])
             for i, m in enumerate(heads)]
+
+
+def _building(li: str) -> dict:
+    text = _text(li)
+    m = _SUPISNE.search(text)
+    return {"supisne_cislo": m.group(1) if m else None, "text": text}
 
 
 def _owner_row(li: str) -> list[dict]:
@@ -170,6 +179,11 @@ def parse_detail(page: str) -> dict:
         for li in items:
             owners.extend(_owner_row(li))
 
+    building_parts = [body for title, body in parts if title.casefold().startswith("stavb")]
+    buildings = [_building(li) for body in building_parts for li in _LI_ANY.findall(body)]
+    if building_parts and not buildings and not any(_NO_RECORD.search(_text(b)) for b in building_parts):
+        raise ValueError("building section present but no building parsed")
+
     # Never report fewer owners than the page links to (e.g. an owner heading renamed to something unknown):
     # an incomplete list would be cached as a valid answer.
     links = len(_OWNER_LINK.findall(page))
@@ -182,6 +196,8 @@ def parse_detail(page: str) -> dict:
         "ostatne": other,
         "vlastnici": owners,
         "vlastnici_sekcia": bool(owner_parts),
+        "stavby": buildings,
+        "sekcie": [title for title, _ in parts if title != "Popis služby"],
         "stav_k": valid[0] if valid else None,
         "spravcovia_najomcovia_tarchy": "nie sú v detaile parcely, len vo výpise LV",
     }
@@ -195,9 +211,8 @@ def parse_identify_safe(data: dict, register: str, number: str) -> dict:
 
 
 PARSERS_IDENTIFY = (parse_identify, _null)
-PARSERS_DETAIL = (parse_detail, sections, _owner_row, split_person, _text)
-PARSER_DETAIL_REGEXES = (
-    _LI.pattern, _TAG.pattern, _PERSON.pattern, _BSM_PERSON.pattern, _OWNER_LINK.pattern,
-    _ORDER.pattern, _SHARE.pattern, _H3.pattern, _LI_ANY.pattern, _VALID.pattern, _DATE.pattern,
-    json.dumps(_LABELS, ensure_ascii=False),
-)
+PARSERS_DETAIL = (parse_detail, sections, _building, _owner_row, split_person, _text)
+PARSER_DETAIL_REGEXES = (_LI.pattern, _TAG.pattern, _PERSON.pattern, _BSM_PERSON.pattern, _ORDER.pattern, _SHARE.pattern,
+                         _VALID.pattern, _DATE.pattern, _H3.pattern, _LI_ANY.pattern, _SUPISNE.pattern,
+                         _OWNER_LINK.pattern, _NO_RECORD.pattern,
+                         json.dumps(_LABELS, ensure_ascii=False))
