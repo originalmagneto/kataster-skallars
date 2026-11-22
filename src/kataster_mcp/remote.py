@@ -27,6 +27,7 @@ from .cache import PERSONAL_TTL, Cache, Quota, purge_files
 from .cli import compact
 from .envelope import Envelope
 from .http import Http
+from .pacing import Pacer
 from .policy import PUBLIC_POLICY
 from .server import create_server
 from .remote_auth import OAuth
@@ -153,12 +154,13 @@ class Remote:
         self.http = Http(PUBLIC_POLICY)
         self.shared = Cache(data_dir / "shared" / "cache.sqlite", private=True)
         self.quota = Quota(self.shared.db)
+        self.http.blocks = self.shared
+        self.http.pacer = Pacer(self.shared.path.parent / "tempo")
         self.lock = asyncio.Lock()
         self.pending = 0
         self.servers, self.apps = {}, {}
         for tenant in {r["tenant"] for r in read_tokens(token_file)}:
             self.add_tenant(tenant)
-        self.http.blocks = self.shared
         self.app = Starlette(
             routes=[
                 Route("/health", self.health),
@@ -169,8 +171,8 @@ class Remote:
 
     def add_tenant(self, tenant: str) -> None:
         directory = self.data_dir / "users" / tenant
-        server = create_server(data_dir=directory, http=self.http)
-        server.app_state.quota = self.quota
+        server = create_server(data_dir=directory, http=self.http, limits_dir=self.shared.path.parent,
+                               shared_quota=self.quota)
         page_size = server.app_state.osoby.db.execute("PRAGMA page_size").fetchone()[0]
         server.app_state.osoby.db.execute(
             f"PRAGMA max_page_count={64 * 1024**2 // page_size}"

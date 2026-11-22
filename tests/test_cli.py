@@ -11,6 +11,9 @@ import pytest
 FIXTURE = Path(__file__).parent / "fixtures" / "lv_vypis_anon.html"
 
 
+pytestmark = pytest.mark.usefixtures("isolated_subprocess_limits")
+
+
 def run_cli(tmp_path, *args):
     result = subprocess.run(
         [

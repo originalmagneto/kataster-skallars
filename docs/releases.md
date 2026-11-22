@@ -1,7 +1,9 @@
 # Vydania a izolovaná obnova
 
-Kataster backend/CLI má verziu 0.8.0, Auth 0.2.0. Pluginové manifesty (0.2.0) majú
+Kataster backend/CLI má verziu 0.9.0, Auth 0.2.0. Pluginové manifesty (0.2.0) majú
 samostatný životný cyklus a táto zmena ich nemení.
+
+Lokálne CLI a stdio MCP od verzie 0.9.0 zdieľajú v rámci účtu dennú kvótu, blokáciu portálu a odstup medzi požiadavkami. Cestu k spoločnému stavu ukáže `sk-kataster --json call kataster_status '{}'` v poli `limity_dir`. Pri otvorení starého dátového adresára sa prenesie jeho dnešná kvóta a platná blokácia. Remote služba používa spoločné limity vo svojom dátovom zväzku.
 
 Verzia 0.8.0 číta vlastníkov bytov a nebytových priestorov z uloženého náhľadu HTML a výpisu HTML/PDF. V CLI zobrazí jednotky a podiely príkaz `sk-kataster --json lv inspect CESTA --full`. Prehľad osoby používa novú verziu parsera. Ak má opäť zahŕňať staršie importy, treba znovu importovať pôvodné dokumenty.
 

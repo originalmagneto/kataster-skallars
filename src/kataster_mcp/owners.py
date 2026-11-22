@@ -59,26 +59,29 @@ def _limit_info(app) -> dict:
 
 def check_and_count(app, key: str, confirmed: bool) -> None:
     """Enforce the daily cap before the portal is queried, then count the parcel."""
-    if app.quota.counted(key):
-        return
-    used = app.quota.used()
-    policy = app.policy
-    if used >= policy.owners_daily_hard:
-        raise KatasterError(
-            "limit_reached",
-            f"Daily limit of {policy.owners_daily_hard} parcels for owner lookups reached ({today()}). "
-            "Cached parcels still work; new ones tomorrow.",
-            details=_limit_info(app),
-        )
-    soft = policy.owners_daily_soft
-    if soft is not None and used >= soft and not confirmed:
-        raise KatasterError(
-            "limit_reached",
-            f"{used} parcels looked up today; continuing needs the user's explicit approval "
-            "(then call again with potvrdene=true).",
-            details={**_limit_info(app), "potvrdenie_potrebne": True},
-        )
-    app.quota.record(key)
+    with app.quota.db:
+        app.quota.db.execute("BEGIN IMMEDIATE")
+        day = today()
+        if app.quota.counted(key, day):
+            return
+        used = app.quota.used(day)
+        policy = app.policy
+        if used >= policy.owners_daily_hard:
+            raise KatasterError(
+                "limit_reached",
+                f"Daily limit of {policy.owners_daily_hard} parcels for owner lookups reached ({today()}). "
+                "Cached parcels still work; new ones tomorrow.",
+                details=_limit_info(app),
+            )
+        soft = policy.owners_daily_soft
+        if soft is not None and used >= soft and not confirmed:
+            raise KatasterError(
+                "limit_reached",
+                f"{used} parcels looked up today; continuing needs the user's explicit approval "
+                "(then call again with potvrdene=true).",
+                details={**_limit_info(app), "potvrdenie_potrebne": True},
+            )
+        app.quota.record(key, day)
 
 
 async def lookup_owners(app, env: Envelope, ku: str, cislo: str, register: str = "auto",
