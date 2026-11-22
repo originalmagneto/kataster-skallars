@@ -33,6 +33,13 @@ def tokens(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", plain.casefold())
 
 
+def overview_tokens(priezvisko: str | None, meno: str | None, nazov: str | None, ico: str | None) -> list[str]:
+    want = tokens(" ".join(x for x in (priezvisko, meno, nazov) if x))
+    if not ico and len(want) < (1 if nazov else 2):
+        raise KatasterError("invalid_input", "Give the surname and first name, or the legal person's name or IČO.")
+    return want
+
+
 def norm_date(text: str | None) -> str | None:
     """'1.2.1950', '01.02.1950' or '1950-02-01' -> '01.02.1950'."""
     if text is None or not text.strip():
@@ -191,9 +198,7 @@ def register(mcp, app) -> None:
         env = Envelope()
         try:
             ico = norm_ico(ico)
-            want = tokens(" ".join(x for x in (priezvisko, meno, nazov) if x))
-            if not ico and len(want) < (1 if nazov else 2):
-                raise KatasterError("invalid_input", "Give the surname and first name, or the legal person's name or IČO.")
+            want = overview_tokens(priezvisko, meno, nazov, ico)
             date = norm_date(datum_narodenia)
             ku_kod = ku_mod.resolve(ku)["kod"] if ku else None
             out = overview(app, want, date, ku_kod, ico)

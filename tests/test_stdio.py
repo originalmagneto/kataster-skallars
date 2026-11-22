@@ -29,7 +29,7 @@ async def test_stdio_discovery_and_incomplete_lv(tmp_path):
         ClientSession(read, write) as client,
     ):
         init = await client.initialize()
-        assert init.server_info.version == "0.11.0"
+        assert init.server_info.version == "0.12.0"
         tools = await client.list_tools()
         assert "kataster_lv_import" in {tool.name for tool in tools.tools}
         result = await client.call_tool(
@@ -74,3 +74,18 @@ async def test_local_cli_and_stdio_share_migrated_quota(tmp_path):
     assert cli_state["data_dir"] != mcp_state["data_dir"]
     assert cli_state["limity_dir"] == mcp_state["limity_dir"]
     assert cli_state["kvota_vlastnici"]["pouzite"] == mcp_state["kvota_vlastnici"]["pouzite"] == 1
+
+
+def test_offline_smoke_isolated_and_refuses_provider(tmp_path):
+    import subprocess
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "smoke_stdio.py"
+    command = [sys.executable, str(script), "--offline"]
+    state = tmp_path / "normal-state"
+    env = {**os.environ, "SK_KATASTER_DATA_DIR": str(state)}
+    args = ["kataster_status", "{}", "kataster_parcela", '{"ku":"871541","cislo":"E 503"}']
+    run = subprocess.run(command + args, cwd=tmp_path, env=env, capture_output=True, text=True,
+                         encoding="utf-8", timeout=30)
+    assert run.returncode != 0 and "offline smoke" in run.stdout
+    assert "kataster_status" in run.stdout and not state.exists()

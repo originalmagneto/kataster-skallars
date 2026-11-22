@@ -26,6 +26,7 @@ sk-kataster --json ku resolve 'Vyšný Kubín'
 sk-kataster --json lv inspect '/cesta/vypis.pdf'
 sk-kataster --json lv import '/cesta/vypis.pdf' --dry-run
 sk-kataster --json lv import '/cesta/vypis.pdf'
+sk-kataster --json person overview --surname 'Priezvisko' --first-name 'Meno'
 sk-kataster --json person overview --name 'Meno Priezvisko'
 sk-kataster --json tools
 sk-kataster --json tools kataster_lv

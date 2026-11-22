@@ -1,5 +1,11 @@
 # Vydania a izolovaná obnova
 
+Kataster 0.12.0 zobrazuje v príkaze `doctor` dnešnú spoločnú kvótu vlastníkov. V poli `kvota_vlastnici` sú deň, počet využitých parciel, denný limit a zostávajúci počet. Prehľad osoby prijíma aj samostatné parametre `--surname` a `--first-name`.
+
+Offline kontrola stdio spustí samostatný MCP proces s dočasnými dátami a kvótou. Napríklad `uv run --offline --frozen python scripts/smoke_stdio.py --offline kataster_status '{}'` overí spojenie aj volanie nástroja. V tomto režime transport odmietne všetky požiadavky na portál.
+
+Vývojové skripty `scripts/anonymize_lv_extract.py`, `anonymize_lv_nahlad.py` a `anonymize_lv_pdf.py` prijímajú vstupný a výstupný súbor. Dve voliteľné čísla určujú počet prvých a posledných jednotiek vo vzorke. Pri PDF je výstupom JSON s textom a súradnicami pre test parsera. Skript `anonymize_eskn_detail.py` podporuje detaily parciel aj stavieb. Pred zaradením výstupu do testov skontrolujte aj voľný text a údaje nehnuteľnosti.
+
 Kataster 0.11.0 pridáva do HTML exportu najviac osem podrobných výrezov skupín parciel. Výrez sa vytvorí pri aspoň dvojnásobnom zlepšení mierky. Lokálny aj vzdialený nástroj vracajú mierku výrezov a počet dotazov na podklady. Pri vzdialenom exporte sa veľkosti všetkých súborov vrátane vložených výrezov sčítajú do limitu 8 MiB.
 
 Kataster backend a CLI 0.10.0 sprístupňujú súpisné čísla stavieb na parcele, ich voliteľný detail a zoznam ostatných katastrálnych území obce. Plugin 0.3.0 dopĺňa postup overenia LV stavby. Auth má verziu 0.2.0.
