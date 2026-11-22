@@ -1,4 +1,4 @@
-> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.13.1, upstream autorstvo a MIT licencia zachované.
+> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.14.0, upstream autorstvo a MIT licencia zachované.
 
 # Kataster SKALLARS
 
@@ -60,6 +60,8 @@ bonitu pôdy, úradnú hodnotu, LPIS, záplavové územia, ochranu prírody, les
 | `kataster_lv_import` | načítanie výpisu LV alebo náhľadu LV, ktorý ste si uložili (HTML alebo PDF); aj celý priečinok naraz |
 | `kataster_osoba_prehlad` | prehľad parciel a podielov jednej osoby zložený z náhľadov LV, ktoré ste si uložili; bez dotazu na portál |
 | `kataster_status` | verziu, limity a dnešné využitie kvóty |
+
+Pri historickej mape zadajte nástroju `kataster_mapa` parameter `"cyklus": "2017-2019"` alebo `"cyklus": "2020-2022"`, formát PNG alebo HTML a podklad `orto` alebo `orto+kn`. Bez parametra sa použije súčasný podklad. Hranice parciel a voliteľná vrstva KN sú vždy súčasné. Mapa uvádza zdroj GKÚ Bratislava, NLC a dátum snímkovania pre zobrazenú plochu. Pri viacerých dátumoch ukáže najstarší a najnovší, pri neúplných údajoch „nezistený“. Podrobné výrezy v HTML majú vlastné dátumy. Vzdialený export má spoločný limit 8 MiB pre všetky súbory.
 
 Vrstvy v `kataster_vrstvy`: bonitovaná pôdnoekologická jednotka (BPEJ), úradná hodnota pôdy, LPIS, užívateľ pôdy,
 záplavy, chránené územia, nadmorská výška, sklon terénu, zastavané územie obce, zakreslené ťarchy, pozemkové úpravy

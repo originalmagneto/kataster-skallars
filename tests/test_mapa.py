@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from kataster_mcp import render, server
+from kataster_mcp import ortofoto, render, server
 from test_core import FIX
 from test_remote import call, remote  # noqa: F401  (pytest fixture)
 
@@ -77,13 +77,19 @@ def test_remote_map_rejects_oversized_output(remote, offline, monkeypatch):
 
 
 @pytest.mark.parametrize("extra", [0, 1])
-def test_remote_combined_html_limit_in_utf8_bytes(remote, offline, monkeypatch, extra):
+@pytest.mark.parametrize("cycle", [None, "2020-2022"])
+def test_remote_combined_html_limit_in_utf8_bytes(remote, offline, monkeypatch, extra, cycle):
     client, _ = remote
     limit = 8 * 1024**2
+    async def archived(http, frame, cycle, env, stats):
+        stats.update(archivne_vyrezy=1, datum_dotazy=1)
+        return Image.new("RGBA", (frame.width, frame.height)), ortofoto.Acquisition(cycle, None, None)
+
+    monkeypatch.setattr(ortofoto, "background", archived)
     html = "á" * (limit // 2 - 1)
     monkeypatch.setattr(render, "html", lambda *args: html)
     monkeypatch.setattr(render, "geojson", lambda *args: "{}" + " " * extra)
-    result = call(client, "kataster_mapa", {**REQUEST, "format": ["html", "geojson"]})
+    result = call(client, "kataster_mapa", {**REQUEST, "format": ["html", "geojson"], "cyklus": cycle})
     if extra:
         assert result.get("isError") and "príliš veľká" in result["content"][0]["text"]
     else:

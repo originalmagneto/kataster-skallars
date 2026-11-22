@@ -1,5 +1,7 @@
 # Vydania a izolovaná obnova
 
+Kataster 0.14.0 pridáva do PNG a HTML historické ortofoto pre cykly 2017-2019 a 2020-2022. Pri prehľade a výrezoch uvádza dátum snímkovania podľa archívu ZBGIS, zdroj a upozornenie na súčasné hranice parciel. Spoločný limit vzdialeného exportu je 8 MiB.
+
 Kataster 0.13.1 dopĺňa do opisu `kataster_lv_import` význam polí `jednotky` a `jednotka`. Na vzdialenom MCP sprístupní podrobnosti parameter `full=true`. Offline regresný test overuje, že režim `--live` testovacieho skriptu používa spoločné limity účtu aj pri dočasnom dátovom adresári.
 
 Kataster 0.13.0 zachováva pôvodné chyby nástrojov v lokálnom aj vzdialenom CLI. Dávkový import vracia stav tiarch a varovania pre každý LV. Pri užšom vstupe ponechá uloženú kópiu a uvedie počty chýbajúcich položiek v `ulozenie.ubudlo`. Plugin 0.3.1 aktualizuje návod k týmto výsledkom.

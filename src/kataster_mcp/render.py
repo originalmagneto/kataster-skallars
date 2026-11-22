@@ -9,11 +9,18 @@ import json
 import math
 from collections.abc import Sequence
 from html import escape
+from pathlib import Path
+from typing import TYPE_CHECKING
 from xml.sax.saxutils import escape as xml_escape
 
 from PIL import Image, ImageDraw, ImageFont
 
+from PIL.PngImagePlugin import PngInfo
+
 from .envelope import KatasterError
+
+if TYPE_CHECKING:
+    from .ortofoto import Acquisition
 
 ORTO_URL = "https://zbgisws.skgeodesy.sk/zbgis_ortofoto_wms/service.svc/get"
 KN_URL = "https://kataster.skgeodesy.sk/eskn/services/NR/kn_wms_norm/MapServer/WmsServer"
@@ -125,11 +132,15 @@ async def background(http, f: Frame, podklad: str, env, stats: dict | None = Non
         base = await _osm(http, f, stats)
         env.source("osm_tiles", OSM_TILES, oficialny=False, z_cache=False)
     if podklad in ("kn", "orto+kn"):
-        stats["wms_dotazy"] = stats.get("wms_dotazy", 0) + 1
-        resp = await http.get(KN_URL, f.wms_params(KN_LAYERS, "image/png", transparent=True))
-        base = Image.alpha_composite(base, _image(resp, "KN WMS"))
-        env.source("ugkk_kn_wms", KN_URL, oficialny=True, z_cache=False)
+        base = await add_kn(http, f, base, env, stats)
     return base
+
+
+async def add_kn(http, f: Frame, base: Image.Image, env, stats: dict) -> Image.Image:
+    stats["wms_dotazy"] = stats.get("wms_dotazy", 0) + 1
+    resp = await http.get(KN_URL, f.wms_params(KN_LAYERS, "image/png", transparent=True))
+    env.source("ugkk_kn_wms", KN_URL, oficialny=True, z_cache=False)
+    return Image.alpha_composite(base, _image(resp, "KN WMS"))
 
 
 def clusters(shapes: list) -> list[list[int]]:
@@ -180,7 +191,7 @@ def _font(size: int):
             return ImageFont.truetype(name, size)
         except OSError:
             continue
-    return ImageFont.load_default(size)
+    return ImageFont.truetype(Path(__file__).parent / "data" / "fonts" / "Barlow-Regular.ttf", size)
 
 
 def _scale_bar(draw, f: Frame, font):
@@ -196,7 +207,15 @@ def _scale_bar(draw, f: Frame, font):
     draw.text((x0, y0 - 24), f"{int(length_m)} m", fill=(0, 0, 0, 255), font=font)
 
 
-def render_png(bg: Image.Image, f: Frame, parcels: list[dict], shapes: list, podklad: str, popisky: bool) -> bytes:
+def _attribution(podklad: str, history: "Acquisition | None") -> str:
+    credits = dict(ATTRIBUTION)
+    if history:
+        credits["orto"] = history.source
+    return " · ".join(credits[k] for k in ("orto", "kn", "osm") if k in podklad)
+
+
+def render_png(bg: Image.Image, f: Frame, parcels: list[dict], shapes: list, podklad: str, popisky: bool,
+               history: "Acquisition | None" = None) -> bytes:
     overlay = Image.new("RGBA", bg.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
     font = _font(max(14, f.width // 60))
@@ -216,14 +235,23 @@ def render_png(bg: Image.Image, f: Frame, parcels: list[dict], shapes: list, pod
             draw.rectangle((bb[0] - 4, bb[1] - 2, bb[2] + 4, bb[3] + 2), fill=(255, 255, 255, 210))
             draw.text((x, y), text, fill=(0, 0, 0, 255), font=font, anchor="mm")
     _scale_bar(draw, f, _font(max(12, f.width // 80)))
-    attrib = " · ".join(ATTRIBUTION[k] for k in ("orto", "kn", "osm") if k in podklad)
+    attrib = _attribution(podklad, history)
     small = _font(max(11, f.width // 110))
     bb = draw.textbbox((f.width - 8, f.height - 8), attrib, font=small, anchor="rd")
     draw.rectangle((bb[0] - 4, bb[1] - 2, bb[2] + 4, bb[3] + 2), fill=(255, 255, 255, 200))
     draw.text((f.width - 8, f.height - 8), attrib, fill=(0, 0, 0, 255), font=small, anchor="rd")
+    metadata = None
+    if history:
+        caption = "\n".join(history.lines())
+        label = _font(max(14, f.width // 80))
+        box = draw.multiline_textbbox((16, 13), caption, font=label, spacing=4)
+        draw.rectangle((8, 6, box[2] + 8, box[3] + 7), fill=(255, 255, 255, 238))
+        draw.multiline_text((16, 13), caption, font=label, spacing=4, fill="black")
+        metadata = PngInfo()
+        metadata.add_itxt("Description", caption)
     out = Image.alpha_composite(bg, overlay).convert("RGB")
     buf = io.BytesIO()
-    out.save(buf, "PNG", optimize=True)
+    out.save(buf, "PNG", optimize=True, pnginfo=metadata)
     return buf.getvalue()
 
 
@@ -262,7 +290,8 @@ def kml(parcels: list[dict], shapes: list) -> str:
 
 
 def html(parcels: list[dict], f: Frame, bg_jpeg: bytes | None, title: str, podklad: str,
-         details: Sequence[tuple[Frame, bytes]] = ()) -> str:
+         details: Sequence[tuple[Frame, bytes]] = (), history: "Acquisition | None" = None,
+         captions: Sequence[tuple[str, str]] = ()) -> str:
     """Leaflet map: the overview image of the whole frame and, above it, sharp crops (details) of parcel clusters.
     All images are embedded, so nothing is loaded from the WMS by the browser (its certificate chain may not be
     trusted there). OSM tiles are added only when the page is served over http(s): opened from a file, the browser
@@ -276,21 +305,30 @@ def html(parcels: list[dict], f: Frame, bg_jpeg: bytes | None, title: str, podkl
     for fr, jpg in images:
         uri = "data:image/jpeg;base64," + base64.b64encode(jpg).decode()
         overlay += f"L.imageOverlay('{uri}', {json.dumps(fr.bounds)}).addTo(map);\n"
-    attrib = " · ".join(ATTRIBUTION[k] for k in ("orto", "kn", "osm") if k in podklad)
+    attrib = _attribution(podklad, history)
+    basemap = f"""if (location.protocol.startsWith('http')) {{
+  L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{maxZoom: 22, maxNativeZoom: 19,
+    attribution: '© OpenStreetMap contributors'}}).addTo(map);
+}} else {{
+  map.setMaxBounds(L.latLngBounds({json.dumps(f.bounds)}).pad(0.1));
+}}"""
+    legend = ""
+    if history:
+        basemap = f"map.setMaxBounds(L.latLngBounds({json.dumps(f.bounds)}).pad(0.1));"
+        legend = "<header>" + " · ".join(escape(line) for line in history.lines())
+        if captions:
+            rows = "".join(f"<li>{escape(name)}: {escape(dates)}</li>" for name, dates in captions)
+            legend += f"<details><summary>Dátumy podrobných výrezov</summary><ul>{rows}</ul></details>"
+        legend += "</header>"
     return f"""<!doctype html>
 <html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{escape(title)}</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>html,body,#map{{height:100%;margin:0}} .lbl{{background:#fff;border:0;font:600 13px sans-serif}}</style>
-</head><body><div id="map"></div><script>
+<style>html,body{{height:100%;margin:0}} body{{display:flex;flex-direction:column}} #map{{flex:1;min-height:0}} header{{font:15px/1.45 system-ui,sans-serif;padding:6px 12px;max-height:35vh;overflow:auto}} .lbl{{background:#fff;border:0;font:600 13px sans-serif}}</style>
+</head><body>{legend}<div id="map"></div><script>
 const map = L.map('map', {{maxZoom: 22}});
-if (location.protocol.startsWith('http')) {{
-  L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{maxZoom: 22, maxNativeZoom: 19,
-    attribution: '© OpenStreetMap contributors'}}).addTo(map);
-}} else {{
-  map.setMaxBounds(L.latLngBounds({json.dumps(f.bounds)}).pad(0.1));
-}}
+{basemap}
 {overlay}
 const data = {json.dumps(data, ensure_ascii=False)};
 const layer = L.geoJSON(data, {{
@@ -301,6 +339,7 @@ const layer = L.geoJSON(data, {{
     l.bindPopup('<b>' + p.register + ' ' + p.cislo + '</b><br>' + (p.ku_nazov || p.ku_kod) + '<br>' + p.vymera_m2 + ' m²');
   }}
 }}).addTo(map);
+document.querySelector('header details')?.addEventListener('toggle', () => map.invalidateSize());
 map.fitBounds(layer.getBounds(), {{padding: [30, 30]}});
 map.attributionControl.addAttribution({json.dumps(attrib, ensure_ascii=False)});
 </script></body></html>
