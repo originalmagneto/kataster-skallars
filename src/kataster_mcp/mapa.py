@@ -12,7 +12,7 @@ from mcp import types
 from pydantic import Field
 from shapely.ops import unary_union
 
-from . import geo, render
+from . import geo, ortofoto, render
 from .cache import restrict
 from .envelope import Envelope, KatasterError
 from .skupina import MAX_PARCELS, ParcelRef
@@ -29,6 +29,7 @@ MAX_INLINE = 8 * 1024**2  # remote result size, all formats together
 Parcels = Annotated[list[ParcelRef], Field(description=f"Parcels to draw (max {MAX_PARCELS}).")]
 Formats = Annotated[list[Format], Field(description="Outputs: png (rendered map), html (interactive Leaflet map), geojson, kml.")]
 Podklad = Annotated[Literal["orto", "kn", "orto+kn", "osm"], Field(description="Background: orto (ZBGIS orthophoto), kn (cadastral map), orto+kn, osm (OpenStreetMap).")]
+Cyklus = Annotated[ortofoto.Cycle | None, Field(description="Historical orthophoto cycle for PNG/HTML with orto or orto+kn. Omit for current imagery. Parcel boundaries are current.")]
 Popisky = Annotated[bool, Field(description="Label parcels with register and number.")]
 
 
@@ -37,36 +38,52 @@ def _slug(text: str) -> str:
     return s[:60] or "mapa"
 
 
-async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str], podklad: str, popisky: bool):
+async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str], podklad: str, popisky: bool, cyklus: ortofoto.Cycle | None = None):
     """Render the requested formats in memory. Returns parcels, rendered files and metadata shared by local and remote exports."""
     from .server import _with_ku, find_parcel
 
     if not parcely or len(parcely) > MAX_PARCELS:
         raise KatasterError("invalid_input", f"Give 1 to {MAX_PARCELS} parcels.")
+    if cyklus and (podklad not in ("orto", "orto+kn") or not {"png", "html"}.intersection(formats)):
+        raise KatasterError("invalid_input", "Historický cyklus vyžaduje podklad orto alebo orto+kn a formát png alebo html.")
     found = [_with_ku(await find_parcel(app, env, r.ku, r.cislo, r.register)) for r in parcely]
     shapes = [geo.parcel_shape(p["geometria"]) for p in found]
     frame = render.Frame(unary_union(shapes).bounds)
     fmts = list(dict.fromkeys(formats))
     stats: dict[str, int] = {}
     crop_info = []
-    bg = None
+
+    async def background(area):
+        if cyklus is None:
+            return await render.background(app.http, area, podklad, env, stats), None
+        image, info = await ortofoto.background(app.http, area, cyklus, env, stats)
+        if podklad == "orto+kn":
+            image = await render.add_kn(app.http, area, image, env, stats)
+        return image, info
+
+    bg, overview = None, None
     if "png" in fmts or "html" in fmts:
-        bg = await render.background(app.http, frame, podklad, env, stats)
+        bg, overview = await background(frame)
     title = ", ".join(f"{p['register']} {p['cislo']}" for p in found[:5]) + f" · {found[0].get('ku_nazov') or found[0]['ku_kod']}"
     outputs = {}
     for fmt in fmts:
         if fmt == "png":
-            outputs[fmt] = render.render_png(bg, frame, found, shapes, podklad, popisky)
+            outputs[fmt] = render.render_png(bg, frame, found, shapes, podklad, popisky, overview)
         elif fmt == "html":
             details = []
+            captions = []
             crops = render.detail_frames(shapes, frame)
             if len(crops) > render.MAX_DETAILS:
                 env.warn(f"Mapa obsahuje {len(crops)} skupín na priblíženie. Podrobný výrez má prvých {render.MAX_DETAILS}.")
             for group, crop in crops[:render.MAX_DETAILS]:
-                image = await render.background(app.http, crop, podklad, env, stats)
+                image, info = await background(crop)
                 details.append((crop, render.jpeg(image)))
-                crop_info.append(_summary([found[i] for i in group], crop))
-            outputs[fmt] = render.html(found, frame, render.jpeg(bg), title, podklad, details)
+                summary = _summary([found[i] for i in group], crop)
+                if info:
+                    summary["ortofoto"] = info.metadata()
+                    captions.append((", ".join(summary["parcely"]), info.dates))
+                crop_info.append(summary)
+            outputs[fmt] = render.html(found, frame, render.jpeg(bg), title, podklad, details, overview, captions)
         elif fmt == "geojson":
             outputs[fmt] = render.geojson(found)
         elif fmt == "kml":
@@ -74,6 +91,9 @@ async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str]
     summary = _summary(found, frame)
     summary["vyrezy"] = crop_info
     summary["podklad_dotazy"] = {"wms": stats.get("wms_dotazy", 0), "osm_dlazdice": stats.get("osm_dlazdice", 0)}
+    if overview:
+        summary["ortofoto"] = overview.metadata()
+        summary["podklad_dotazy"].update({k: stats[k] for k in ("archivne_vyrezy", "datum_dotazy")})
     return found, outputs, summary
 
 
@@ -99,6 +119,7 @@ def register(mcp, app) -> None:
         popisky: Popisky = True,
         out_dir: Annotated[str | None, Field(description="Directory for the files; default <data dir>/mapy.")] = None,
         nazov: Annotated[str | None, Field(description="Base file name; default derived from the parcels.")] = None,
+        cyklus: Cyklus = None,
     ) -> dict:
         """Draw parcels on a map and save files. Returns the file paths.
 
@@ -108,7 +129,7 @@ def register(mcp, app) -> None:
         """
         env = Envelope()
         try:
-            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky)
+            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky, cyklus)
             directory = Path(out_dir).expanduser() if out_dir else app.data_dir / "mapy"
             directory.mkdir(parents=True, exist_ok=True)
             base = _base_name(found, nazov)
@@ -133,6 +154,7 @@ def register_remote(server, app) -> None:
         format: Formats = ["png"],
         podklad: Podklad = "orto",
         popisky: Popisky = True,
+        cyklus: Cyklus = None,
     ) -> types.CallToolResult:
         """Draw parcels on a map and return it in the result; nothing is stored on the server.
 
@@ -142,7 +164,7 @@ def register_remote(server, app) -> None:
         """
         env = Envelope()
         try:
-            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky)
+            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky, cyklus)
             encoded = {fmt: c if isinstance(c, bytes) else c.encode("utf-8") for fmt, c in outputs.items()}
             if sum(map(len, encoded.values())) > MAX_INLINE:
                 raise KatasterError(
