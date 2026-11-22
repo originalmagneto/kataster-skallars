@@ -38,7 +38,7 @@ def _slug(text: str) -> str:
 
 
 async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str], podklad: str, popisky: bool):
-    """Render the requested formats in memory. Returns (parcels, frame, {format: bytes | str})."""
+    """Render the requested formats in memory. Returns parcels, rendered files and metadata shared by local and remote exports."""
     from .server import _with_ku, find_parcel
 
     if not parcely or len(parcely) > MAX_PARCELS:
@@ -47,21 +47,34 @@ async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str]
     shapes = [geo.parcel_shape(p["geometria"]) for p in found]
     frame = render.Frame(unary_union(shapes).bounds)
     fmts = list(dict.fromkeys(formats))
+    stats: dict[str, int] = {}
+    crop_info = []
     bg = None
     if "png" in fmts or "html" in fmts:
-        bg = await render.background(app.http, frame, podklad, env)
-    title = ", ".join(f"{p['register']} {p['cislo']}" for p in found[:5]) + f" — {found[0].get('ku_nazov') or found[0]['ku_kod']}"
+        bg = await render.background(app.http, frame, podklad, env, stats)
+    title = ", ".join(f"{p['register']} {p['cislo']}" for p in found[:5]) + f" · {found[0].get('ku_nazov') or found[0]['ku_kod']}"
     outputs = {}
     for fmt in fmts:
         if fmt == "png":
             outputs[fmt] = render.render_png(bg, frame, found, shapes, podklad, popisky)
         elif fmt == "html":
-            outputs[fmt] = render.html(found, frame, render.jpeg(bg), title, podklad)
+            details = []
+            crops = render.detail_frames(shapes, frame)
+            if len(crops) > render.MAX_DETAILS:
+                env.warn(f"Mapa obsahuje {len(crops)} skupín na priblíženie. Podrobný výrez má prvých {render.MAX_DETAILS}.")
+            for group, crop in crops[:render.MAX_DETAILS]:
+                image = await render.background(app.http, crop, podklad, env, stats)
+                details.append((crop, render.jpeg(image)))
+                crop_info.append(_summary([found[i] for i in group], crop))
+            outputs[fmt] = render.html(found, frame, render.jpeg(bg), title, podklad, details)
         elif fmt == "geojson":
             outputs[fmt] = render.geojson(found)
         elif fmt == "kml":
             outputs[fmt] = render.kml(found, shapes)
-    return found, frame, outputs
+    summary = _summary(found, frame)
+    summary["vyrezy"] = crop_info
+    summary["podklad_dotazy"] = {"wms": stats.get("wms_dotazy", 0), "osm_dlazdice": stats.get("osm_dlazdice", 0)}
+    return found, outputs, summary
 
 
 def _base_name(found: list[dict], nazov: str | None = None) -> str:
@@ -90,12 +103,12 @@ def register(mcp, app) -> None:
         """Draw parcels on a map and save files. Returns the file paths.
 
         PNG is rendered on the server (background from official WMS, outlines, labels, scale bar,
-        attribution). HTML is an interactive Leaflet map with the same background embedded.
+        attribution). HTML is an interactive Leaflet map with an embedded overview and sharper crops for separated parcel groups.
         GeoJSON/KML contain only geometry and public attributes (no owners).
         """
         env = Envelope()
         try:
-            found, frame, outputs = await build(app, env, parcely, format, podklad, popisky)
+            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky)
             directory = Path(out_dir).expanduser() if out_dir else app.data_dir / "mapy"
             directory.mkdir(parents=True, exist_ok=True)
             base = _base_name(found, nazov)
@@ -108,7 +121,7 @@ def register(mcp, app) -> None:
                     path.write_text(content, encoding="utf-8")
                 restrict(path, 0o644)
                 files[fmt] = str(path)
-            return env.ok({"subory": files, **_summary(found, frame)})
+            return env.ok({"subory": files, **metadata})
         except KatasterError as e:
             raise env.fail(e) from e
 
@@ -125,11 +138,11 @@ def register_remote(server, app) -> None:
 
         PNG comes back as an image, HTML (interactive Leaflet map), GeoJSON and KML as embedded
         resources the client can save. Same rendering as the local tool; geometry and public
-        attributes only, never owners.
+        attributes only. HTML includes sharp crops for separated groups. The combined file limit is 8 MiB.
         """
         env = Envelope()
         try:
-            found, frame, outputs = await build(app, env, parcely, format, podklad, popisky)
+            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky)
             encoded = {fmt: c if isinstance(c, bytes) else c.encode("utf-8") for fmt, c in outputs.items()}
             if sum(map(len, encoded.values())) > MAX_INLINE:
                 raise KatasterError(
@@ -146,7 +159,7 @@ def register_remote(server, app) -> None:
                 else:
                     blocks.append(types.EmbeddedResource(type="resource", resource=types.TextResourceContents(
                         uri=uri, mime_type=MIME[fmt], text=outputs[fmt])))
-            summary = env.ok({"subory": listing, **_summary(found, frame)})
+            summary = env.ok({"subory": listing, **metadata})
             return types.CallToolResult(content=[
                 types.TextContent(type="text", text=json.dumps(summary, ensure_ascii=False)), *blocks])
         except KatasterError as e:

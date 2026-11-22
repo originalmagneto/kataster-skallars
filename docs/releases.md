@@ -1,5 +1,7 @@
 # Vydania a izolovaná obnova
 
+Kataster 0.11.0 pridáva do HTML exportu najviac osem podrobných výrezov skupín parciel. Výrez sa vytvorí pri aspoň dvojnásobnom zlepšení mierky. Lokálny aj vzdialený nástroj vracajú mierku výrezov a počet dotazov na podklady. Pri vzdialenom exporte sa veľkosti všetkých súborov vrátane vložených výrezov sčítajú do limitu 8 MiB.
+
 Kataster backend a CLI 0.10.0 sprístupňujú súpisné čísla stavieb na parcele, ich voliteľný detail a zoznam ostatných katastrálnych území obce. Plugin 0.3.0 dopĺňa postup overenia LV stavby. Auth má verziu 0.2.0.
 
 Lokálne CLI a stdio MCP od verzie 0.9.0 zdieľajú v rámci účtu dennú kvótu, blokáciu portálu a odstup medzi požiadavkami. Cestu k spoločnému stavu ukáže `sk-kataster --json call kataster_status '{}'` v poli `limity_dir`. Pri otvorení starého dátového adresára sa prenesie jeho dnešná kvóta a platná blokácia. Remote služba používa spoločné limity vo svojom dátovom zväzku.
