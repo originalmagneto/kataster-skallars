@@ -134,3 +134,18 @@ def test_separate_person_names_match_existing_full_name(tmp_path):
     _, full = run_cli(tmp_path, "person", "overview", "--name", "Fiktívny Vlastník")
     assert result.returncode == 0 and split["data"]["osoby"] == full["data"]["osoby"]
     assert split["data"]["osoby"][0]["pocet_parciel"] == 26
+
+
+def test_call_error_keeps_server_envelope(tmp_path):
+    result, out = run_cli(tmp_path, "call", "kataster_lv", '{"ku":"000000","lv":"1"}')
+    assert result.returncode == 1
+    assert out["chyba"]["typ"] == "not_found"
+    assert "000000" in out["chyba"]["sprava"] and out["chyba"]["coverage"]
+    assert out["zdroje"] == [] and out["varovania"] == []
+
+
+def test_plain_tool_error_keeps_message_and_envelope(tmp_path):
+    result, out = run_cli(tmp_path, "call", "kataster_missing_tool", "{}")
+    assert result.returncode == 1
+    assert "kataster_missing_tool" in out["chyba"]["sprava"]
+    assert out["zdroje"] == [] and out["varovania"] == []

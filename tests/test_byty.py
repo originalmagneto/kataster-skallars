@@ -153,13 +153,15 @@ async def test_person_overview_keeps_shares_at_unit_level(tmp_path):
 
 def test_unit_import_cannot_drop_an_ownership_on_the_same_lv():
     from copy import deepcopy
-    from kataster_mcp.lv import can_replace
+    from kataster_mcp.lv import replacement_decision
 
     stored = _extract()
     candidate = deepcopy(stored)
     owner = candidate["cast_b"]["vlastnici"].pop(0)
     assert any(other["meno"] == owner["meno"] for other in candidate["cast_b"]["vlastnici"])
-    assert not can_replace(candidate, stored)
+    candidate["jednotky"].pop()
+    candidate["stavby"].pop()
+    assert replacement_decision(candidate, stored) == (False, {"vlastnici": 1, "jednotky": 1, "stavby": 1})
 
 
 def test_preview_with_unit_count_but_no_unit_rows_is_partial():

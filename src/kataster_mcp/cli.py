@@ -16,7 +16,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__, ku, lv, osoba
 from .cache import PERSONAL_TTL, Cache, default_limits_dir, standalone_data_dir, today
-from .envelope import Envelope, KatasterError
+from .envelope import Envelope, KatasterError, tool_error_envelope
 from .policy import PUBLIC_POLICY
 
 
@@ -130,13 +130,8 @@ def inspect_file(path: Path, full: bool) -> dict[str, Any]:
     data = lv.parse_page(raw)
     env = Envelope()
     env.source(lv.IMPORT, str(path), oficialny=False, z_cache=False)
-    env.warn(
-        "Rozsah výpisu nie je overený ako úplný. Stav tiarch sa týka iba prečítanej časti C."
-    )
-    if data.get("jednotky_poznamka"):
-        env.warn(data["jednotky_poznamka"])
-    if data["tarchy"] == "unknown":
-        env.warn("Chýbajúca alebo prázdna časť C nepotvrdzuje neprítomnosť tiarch.")
+    for note in lv.document_warnings(data):
+        env.warn(note)
     return env.ok(data if full else compact(data))
 
 
@@ -259,17 +254,10 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    code = 0
     try:
         result = execute(parser().parse_args(argv))
     except ToolError as error:
-        try:
-            result = json.loads(str(error))
-        except ValueError:
-            result = {
-                "chyba": {"typ": "invalid_input", "sprava": "Volanie nástroja zlyhalo."}
-            }
-        code = 1
+        result = tool_error_envelope(str(error))
     except (KatasterError, OSError, ValueError) as error:
         kind = (
             error.kind
@@ -283,11 +271,10 @@ def main(argv: list[str] | None = None) -> int:
             "zdroje": [],
             "varovania": [],
         }
-        code = 1
     print(
         json.dumps(result, ensure_ascii=False, indent=None if "--json" in argv else 2)
     )
-    return code
+    return int("chyba" in result)
 
 
 if __name__ == "__main__":

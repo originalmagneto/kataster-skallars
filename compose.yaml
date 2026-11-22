@@ -1,6 +1,6 @@
 services:
   kataster:
-    image: registry-mcp.aittorney.online/kataster@sha256:abfd609a5f445fb3c20ccddaa0f8d9d472ae36d94498e3a4bfd7544e62abae42
+    image: registry-mcp.aittorney.online/kataster@sha256:7e92b15c75c844762b26088f47f32da71eba732e127bf8a417c57c3d475b07ff
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
@@ -13,7 +13,7 @@ services:
       SK_KATASTER_TOKENS: ${SK_KATASTER_TOKENS:?Configure per-user token hashes in Dokploy}
       SK_KATASTER_AUTH_ISSUER: ${SK_KATASTER_AUTH_ISSUER:-}
       SK_KATASTER_AUTH_SECRET: ${SK_KATASTER_AUTH_SECRET:-}
-      SOURCE_REVISION: "e05c5f221c8384787ad3696a26c2c1a3c549d949"
+      SOURCE_REVISION: "8cb5cc42406c93c87d75e5f002b83689d86aca8d"
     volumes:
       - kataster-data:/data
     tmpfs:

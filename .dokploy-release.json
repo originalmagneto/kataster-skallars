@@ -1,7 +1,7 @@
 {
-  "source": "e05c5f221c8384787ad3696a26c2c1a3c549d949",
-  "image": "registry-mcp.aittorney.online/kataster@sha256:abfd609a5f445fb3c20ccddaa0f8d9d472ae36d94498e3a4bfd7544e62abae42",
+  "source": "8cb5cc42406c93c87d75e5f002b83689d86aca8d",
+  "image": "registry-mcp.aittorney.online/kataster@sha256:7e92b15c75c844762b26088f47f32da71eba732e127bf8a417c57c3d475b07ff",
   "service": "kataster",
   "origin": "https://mcp-kataster.aittorney.online",
-  "previous": "12b4e109dd6331702a79db5705197b3efbf4bbe2"
+  "previous": "d79784455ab07cc9d66a25e2151841e709e9af15"
 }
