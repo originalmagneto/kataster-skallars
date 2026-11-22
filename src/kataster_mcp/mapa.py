@@ -12,23 +12,25 @@ from mcp import types
 from pydantic import Field
 from shapely.ops import unary_union
 
-from . import geo, ortofoto, render
+from . import geo, ortofoto, qgis, render
 from .cache import restrict
 from .envelope import Envelope, KatasterError
 from .skupina import MAX_PARCELS, ParcelRef
 
-Format = Literal["png", "html", "geojson", "kml"]
+Format = Literal["png", "html", "geojson", "kml", "qgis"]
 MIME = {
     "png": "image/png",
     "html": "text/html",
     "geojson": "application/geo+json",
+    "qgis": "application/zip",
     "kml": "application/vnd.google-earth.kml+xml",
 }
 MAX_INLINE = 8 * 1024**2  # remote result size, all formats together
 
 Parcels = Annotated[list[ParcelRef], Field(description=f"Parcels to draw (max {MAX_PARCELS}).")]
-Formats = Annotated[list[Format], Field(description="Outputs: png (rendered map), html (interactive Leaflet map), geojson, kml.")]
+Formats = Annotated[list[Format], Field(description="Outputs: png (rendered map), html (interactive Leaflet map), geojson, kml, qgis (ZIP containing a QGIS project and parcel GeoJSON).")]
 Podklad = Annotated[Literal["orto", "kn", "orto+kn", "osm"], Field(description="Background: orto (ZBGIS orthophoto), kn (cadastral map), orto+kn, osm (OpenStreetMap).")]
+Themes = Annotated[list[qgis.Theme] | None, Field(description="Optional QGIS WMS layers: dmr (shaded relief), ochrana (protected areas).")]
 Cyklus = Annotated[ortofoto.Cycle | None, Field(description="Historical orthophoto cycle for PNG/HTML with orto or orto+kn. Omit for current imagery. Parcel boundaries are current.")]
 Popisky = Annotated[bool, Field(description="Label parcels with register and number.")]
 
@@ -38,7 +40,8 @@ def _slug(text: str) -> str:
     return s[:60] or "mapa"
 
 
-async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str], podklad: str, popisky: bool, cyklus: ortofoto.Cycle | None = None):
+async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str], podklad: str, popisky: bool, cyklus: ortofoto.Cycle | None = None,
+                qgis_vrstvy: list[qgis.Theme] | None = None):
     """Render the requested formats in memory. Returns parcels, rendered files and metadata shared by local and remote exports."""
     from .server import _with_ku, find_parcel
 
@@ -46,6 +49,10 @@ async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str]
         raise KatasterError("invalid_input", f"Give 1 to {MAX_PARCELS} parcels.")
     if cyklus and (podklad not in ("orto", "orto+kn") or not {"png", "html"}.intersection(formats)):
         raise KatasterError("invalid_input", "Historický cyklus vyžaduje podklad orto alebo orto+kn a formát png alebo html.")
+    if qgis_vrstvy and "qgis" not in formats:
+        raise KatasterError("invalid_input", "Parameter qgis_vrstvy vyžaduje formát qgis.")
+    if cyklus and "qgis" in formats:
+        raise KatasterError("invalid_input", "QGIS používa aktuálne mapové služby. Historický cyklus exportujte samostatne do PNG alebo HTML.")
     found = [_with_ku(await find_parcel(app, env, r.ku, r.cislo, r.register)) for r in parcely]
     shapes = [geo.parcel_shape(p["geometria"]) for p in found]
     frame = render.Frame(unary_union(shapes).bounds)
@@ -84,6 +91,8 @@ async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str]
                     captions.append((", ".join(summary["parcely"]), info.dates))
                 crop_info.append(summary)
             outputs[fmt] = render.html(found, frame, render.jpeg(bg), title, podklad, details, overview, captions)
+        elif fmt == "qgis":
+            outputs[fmt] = qgis.bundle(found, frame, title, podklad, popisky, qgis_vrstvy or [])
         elif fmt == "geojson":
             outputs[fmt] = render.geojson(found)
         elif fmt == "kml":
@@ -95,6 +104,10 @@ async def build(app, env: Envelope, parcely: list[ParcelRef], formats: list[str]
         summary["ortofoto"] = overview.metadata()
         summary["podklad_dotazy"].update({k: stats[k] for k in ("archivne_vyrezy", "datum_dotazy")})
     return found, outputs, summary
+
+
+def _filename(base: str, fmt: str) -> str:
+    return f"{base}.zip" if fmt == "qgis" else f"{base}.{fmt}"
 
 
 def _base_name(found: list[dict], nazov: str | None = None) -> str:
@@ -120,22 +133,24 @@ def register(mcp, app) -> None:
         out_dir: Annotated[str | None, Field(description="Directory for the files; default <data dir>/mapy.")] = None,
         nazov: Annotated[str | None, Field(description="Base file name; default derived from the parcels.")] = None,
         cyklus: Cyklus = None,
+        qgis_vrstvy: Themes = None,
     ) -> dict:
         """Draw parcels on a map and save files. Returns the file paths.
 
         PNG is rendered on the server (background from official WMS, outlines, labels, scale bar,
         attribution). HTML is an interactive Leaflet map with an embedded overview and sharper crops for separated parcel groups.
+        QGIS is a portable ZIP with a project, parcel GeoJSON and layer sources.
         GeoJSON/KML contain only geometry and public attributes (no owners).
         """
         env = Envelope()
         try:
-            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky, cyklus)
+            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky, cyklus, qgis_vrstvy)
             directory = Path(out_dir).expanduser() if out_dir else app.data_dir / "mapy"
             directory.mkdir(parents=True, exist_ok=True)
             base = _base_name(found, nazov)
             files = {}
             for fmt, content in outputs.items():
-                path = directory / f"{base}.{fmt}"
+                path = directory / _filename(base, fmt)
                 if isinstance(content, bytes):
                     path.write_bytes(content)
                 else:
@@ -155,16 +170,17 @@ def register_remote(server, app) -> None:
         podklad: Podklad = "orto",
         popisky: Popisky = True,
         cyklus: Cyklus = None,
+        qgis_vrstvy: Themes = None,
     ) -> types.CallToolResult:
         """Draw parcels on a map and return it in the result; nothing is stored on the server.
 
         PNG comes back as an image, HTML (interactive Leaflet map), GeoJSON and KML as embedded
         resources the client can save. Same rendering as the local tool; geometry and public
-        attributes only. HTML includes sharp crops for separated groups. The combined file limit is 8 MiB.
+        attributes only. QGIS comes as an embedded ZIP. HTML includes sharp crops for separated groups. The combined file limit is 8 MiB.
         """
         env = Envelope()
         try:
-            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky, cyklus)
+            found, outputs, metadata = await build(app, env, parcely, format, podklad, popisky, cyklus, qgis_vrstvy)
             encoded = {fmt: c if isinstance(c, bytes) else c.encode("utf-8") for fmt, c in outputs.items()}
             if sum(map(len, encoded.values())) > MAX_INLINE:
                 raise KatasterError(
@@ -174,10 +190,13 @@ def register_remote(server, app) -> None:
             base = _base_name(found)
             listing, blocks = [], []
             for fmt, raw in encoded.items():
-                uri = f"kataster://mapa/{base}.{fmt}"
+                uri = f"kataster://mapa/{_filename(base, fmt)}"
                 listing.append({"format": fmt, "uri": uri, "mime": MIME[fmt], "bajty": len(raw)})
                 if fmt == "png":
                     blocks.append(types.ImageContent(type="image", data=base64.b64encode(raw).decode(), mime_type=MIME[fmt]))
+                elif fmt == "qgis":
+                    blocks.append(types.EmbeddedResource(type="resource", resource=types.BlobResourceContents(
+                        uri=uri, mime_type=MIME[fmt], blob=base64.b64encode(raw).decode("ascii"))))
                 else:
                     blocks.append(types.EmbeddedResource(type="resource", resource=types.TextResourceContents(
                         uri=uri, mime_type=MIME[fmt], text=outputs[fmt])))

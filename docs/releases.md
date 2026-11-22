@@ -1,5 +1,7 @@
 # Vydania a izolovaná obnova
 
+Kataster 0.15.0 pridáva prenosný projekt QGIS s parcelami, zdrojmi, aktuálnymi podkladmi a voliteľnými tematickými vrstvami. Vzdialené CLI uloží prílohu cez `--save-qgis`. Návod obsahuje aj plugin 0.4.0.
+
 Kataster 0.14.0 pridáva do PNG a HTML historické ortofoto pre cykly 2017-2019 a 2020-2022. Pri prehľade a výrezoch uvádza dátum snímkovania podľa archívu ZBGIS, zdroj a upozornenie na súčasné hranice parciel. Spoločný limit vzdialeného exportu je 8 MiB.
 
 Kataster 0.13.1 dopĺňa do opisu `kataster_lv_import` význam polí `jednotky` a `jednotka`. Na vzdialenom MCP sprístupní podrobnosti parameter `full=true`. Offline regresný test overuje, že režim `--live` testovacieho skriptu používa spoločné limity účtu aj pri dočasnom dátovom adresári.

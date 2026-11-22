@@ -1,4 +1,4 @@
-> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.14.0, upstream autorstvo a MIT licencia zachované.
+> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.15.0, upstream autorstvo a MIT licencia zachované.
 
 # Kataster SKALLARS
 
@@ -54,7 +54,7 @@ bonitu pôdy, úradnú hodnotu, LPIS, záplavové územia, ochranu prírody, les
 | `kataster_vlastnici` | vlastníkov a podiely parcely, jej LV a súpisné čísla stavieb. S `detail_stavieb: true` aj samostatný LV stavby, jej druh a vlastníkov. Každý nový detail stavby čerpá dennú kvótu |
 | `kataster_vrstvy` | tematické údaje o parcele (zoznam nižšie), pri plošných vrstvách aj podiel na výmere |
 | `kataster_skupina` | rozbor viacerých parciel: celková výmera, spoločné hranice, súvislé celky, susedia |
-| `kataster_mapa` | mapu parcely ako PNG, HTML (Leaflet), GeoJSON alebo KML, bez osobných údajov |
+| `kataster_mapa` | mapu parcely ako PNG, HTML (Leaflet), GeoJSON, KML alebo projekt QGIS (ZIP), bez osobných údajov |
 | `kataster_lv` | odkaz na výpis z listu vlastníctva na portáli ESKN (výpis si otvoríte sami) |
 | `kataster_osoba_navod` | postup krok za krokom, ako si v oficiálnom vyhľadávaní portálu ESKN nájsť listy vlastníctva osoby a uložiť ich náhľady (server pri tom na portál nevolá). Uvádza aj názvy a kódy ostatných katastrálnych území tej istej obce |
 | `kataster_lv_import` | načítanie výpisu LV alebo náhľadu LV, ktorý ste si uložili (HTML alebo PDF); aj celý priečinok naraz |
@@ -62,6 +62,20 @@ bonitu pôdy, úradnú hodnotu, LPIS, záplavové územia, ochranu prírody, les
 | `kataster_status` | verziu, limity a dnešné využitie kvóty |
 
 Pri historickej mape zadajte nástroju `kataster_mapa` parameter `"cyklus": "2017-2019"` alebo `"cyklus": "2020-2022"`, formát PNG alebo HTML a podklad `orto` alebo `orto+kn`. Bez parametra sa použije súčasný podklad. Hranice parciel a voliteľná vrstva KN sú vždy súčasné. Mapa uvádza zdroj GKÚ Bratislava, NLC a dátum snímkovania pre zobrazenú plochu. Pri viacerých dátumoch ukáže najstarší a najnovší, pri neúplných údajoch „nezistený“. Podrobné výrezy v HTML majú vlastné dátumy. Vzdialený export má spoločný limit 8 MiB pre všetky súbory.
+
+### Export parciel do QGIS
+
+Nástroj `kataster_mapa` prijíma `"format": ["qgis"]`. Lokálne CLI uloží ZIP a vráti cestu v `data.subory.qgis`. V príklade nahraďte kód katastrálneho územia a číslo parcely vlastnými údajmi.
+
+```sh
+sk-kataster --json call kataster_mapa '{"parcely":[{"ku":"KÓD_KÚ","register":"C","cislo":"ČÍSLO"}],"format":["qgis"],"podklad":"orto+kn","qgis_vrstvy":["dmr","ochrana"]}'
+```
+
+Rozbaľte **celý ZIP** a v QGIS otvorte `kataster.qgs`. Súbor `parcely.geojson` musí zostať vedľa projektu. Obsahuje hranice vybraných parciel v EPSG:4326 a ich základné verejné atribúty. Geometriu môžete otvoriť aj offline. V `ZDROJE.txt` sú poskytovatelia a adresy mapových služieb.
+
+Projekt obsahuje aktuálne ortofoto a katastrálnu mapu ako WMS. Parameter `podklad` určuje počiatočnú viditeľnosť. Pri `osm` sa zobrazí OpenStreetMap. Voliteľné `qgis_vrstvy` pridajú tieňovaný reliéf DMR 5.0 (`dmr`) alebo chránené územia ŠOP SR (`ochrana`). Tieto vrstvy zapnete v paneli Vrstvy. QGIS potrebuje na načítanie mapových služieb internet. Historické ortofoto s parametrom `cyklus` exportujte samostatne do PNG alebo HTML.
+
+Vzdialený MCP vráti ZIP ako binárnu prílohu. Vo vzdialenom CLI použite `sk-kataster --json remote call kataster_mapa '…' --save-qgis projekt.zip` s rovnakým JSON ako v príklade. Cieľ musí byť nový súbor. Do spoločného limitu **8 MiB** sa sčíta veľkosť ZIP a ostatných súčasne vyžiadaných súborov.
 
 Vrstvy v `kataster_vrstvy`: bonitovaná pôdnoekologická jednotka (BPEJ), úradná hodnota pôdy, LPIS, užívateľ pôdy,
 záplavy, chránené územia, nadmorská výška, sklon terénu, zastavané územie obce, zakreslené ťarchy, pozemkové úpravy

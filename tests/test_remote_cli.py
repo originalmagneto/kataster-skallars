@@ -8,6 +8,7 @@ import socket
 import subprocess
 import sys
 import time
+from zipfile import ZipFile
 
 import httpx
 
@@ -135,6 +136,22 @@ def test_remote_cli_roundtrip(tmp_path):
             json.dumps({"file_id": uploaded["data"]["file_id"]}),
         )
         assert code == 0 and imported["data"]["lv"] == "1926"
+        from kataster_mcp.cache import Cache
+        from kataster_mcp.server import WFS_VER
+        from kataster_mcp.sources import wfs
+
+        cache = Cache(tmp_path / "data/users/synthetic/cache.sqlite", private=False)
+        parcel = {"ku_kod": "871796", "register": "E", "cislo": "1", "oznacenie": "E 1",
+                  "vymera_m2": 120, "geometria": json.loads((FIX / "wfs_e599_3_geom.json").read_text())}
+        cache.put(wfs.SOURCE_ID, WFS_VER, "no|871796|E|1", [parcel])
+        cache.db.close()
+        options = json.dumps({"parcely": [{"ku": "871796", "register": "E", "cislo": "1"}], "format": ["qgis"]})
+        target = tmp_path / "export.zip"
+        code, saved = cli("call", "kataster_mapa", options, "--save-qgis", str(target))
+        assert code == 0 and Path(saved["data"]["qgis_subor"]) == target
+        with ZipFile(target) as archive:
+            assert archive.testzip() is None and "kataster.qgs" in archive.namelist()
+        assert cli("call", "kataster_mapa", options, "--save-qgis", str(target))[0] == 1
         key.write_text("invalid")
         code, result = cli("tools")
         assert code == 1 and result["chyba"]["typ"] == "unavailable"

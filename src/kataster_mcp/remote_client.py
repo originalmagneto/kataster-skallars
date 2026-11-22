@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import base64
 import json
 import os
 from pathlib import Path
@@ -9,7 +10,7 @@ from urllib.parse import urlsplit
 
 import httpx
 import httpx2
-from mcp import ClientSession
+from mcp import ClientSession, types
 from mcp.client.streamable_http import streamable_http_client
 
 from .envelope import Envelope, KatasterError, tool_error_envelope
@@ -43,9 +44,39 @@ def add_parser(commands) -> None:
     call = actions.add_parser("call")
     call.add_argument("name")
     call.add_argument("arguments")
+    call.add_argument("--save-qgis", type=Path, metavar="PROJEKT.zip",
+                      help="Uloží QGIS prílohu nástroja kataster_mapa do nového lokálneho súboru.")
+
+
+def save_qgis(content: list, target: Path) -> None:
+    for block in content:
+        if isinstance(block, types.EmbeddedResource) and isinstance(block.resource, types.BlobResourceContents):
+            if block.resource.mime_type == "application/zip":
+                raw = base64.b64decode(block.resource.blob, validate=True)
+                with target.open("xb") as handle:
+                    try:
+                        handle.write(raw)
+                        handle.flush()
+                    except OSError:
+                        handle.close()
+                        target.unlink(missing_ok=True)
+                        raise
+                return
+    raise KatasterError("unavailable", "Server nevrátil prílohu QGIS vo formáte ZIP.")
 
 
 async def mcp_request(args: argparse.Namespace, headers: dict[str, str]) -> dict:
+    target = getattr(args, "save_qgis", None)
+    if args.action == "call":
+        arguments = json.loads(args.arguments)
+        if not isinstance(arguments, dict):
+            raise KatasterError("invalid_input", "Argumenty musia byť JSON objekt.")
+    if target is not None:
+        formats = arguments.get("format")
+        if args.name != "kataster_mapa" or not isinstance(formats, list) or "qgis" not in formats:
+            raise KatasterError("invalid_input", "Voľba --save-qgis vyžaduje kataster_mapa s formátom qgis.")
+        if target.exists():
+            raise KatasterError("invalid_input", f"Súbor už existuje: {target}")
     async with httpx2.AsyncClient(headers=headers, timeout=125) as client:
         async with streamable_http_client(
             args.url.rstrip("/") + "/mcp", http_client=client
@@ -64,16 +95,15 @@ async def mcp_request(args: argparse.Namespace, headers: dict[str, str]) -> dict
                     return Envelope().ok(
                         tool.model_dump(by_alias=True, exclude_none=True)
                     )
-                arguments = json.loads(args.arguments)
-                if not isinstance(arguments, dict):
-                    raise KatasterError(
-                        "invalid_input", "Argumenty musia byť JSON objekt."
-                    )
                 result = await session.call_tool(args.name, arguments)
                 if result.is_error:
                     text = "\n".join(c.text for c in result.content if hasattr(c, "text"))
                     return tool_error_envelope(text, fallback="unavailable")
-                return result.structured_content or json.loads(result.content[0].text)
+    envelope = result.structured_content or json.loads(result.content[0].text)
+    if target is not None:
+        save_qgis(result.content, target)
+        envelope["data"]["qgis_subor"] = str(target)
+    return envelope
 
 
 def execute(args: argparse.Namespace) -> dict:
