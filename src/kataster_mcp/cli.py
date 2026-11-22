@@ -3,7 +3,9 @@
 import argparse
 import asyncio
 import json
+import sqlite3
 import sys
+from contextlib import closing
 from importlib.metadata import version
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -13,8 +15,9 @@ from typing import Any
 from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__, ku, lv, osoba
-from .cache import PERSONAL_TTL, Cache, standalone_data_dir
+from .cache import PERSONAL_TTL, Cache, default_limits_dir, standalone_data_dir, today
 from .envelope import Envelope, KatasterError
+from .policy import PUBLIC_POLICY
 
 
 class Parser(argparse.ArgumentParser):
@@ -39,7 +42,7 @@ def parser() -> Parser:
     root.add_argument("--version", action="version", version=__version__)
     commands = root.add_subparsers(dest="command", required=True)
     commands.add_parser(
-        "doctor", help="Verzia a lokálne nastavenie, bez siete alebo zápisu."
+        "doctor", help="Verzia, adresáre a dnešná kvóta vlastníkov. Číta lokálny stav."
     )
     units = commands.add_parser(
         "ku", help="Katastrálne územia, bez siete."
@@ -70,7 +73,9 @@ def parser() -> Parser:
         "person", help="Prehľad len z vlastných importov."
     ).add_subparsers(dest="action", required=True)
     overview = person.add_parser("overview")
-    overview.add_argument("--name")
+    overview.add_argument("--surname", help="Priezvisko fyzickej osoby.")
+    overview.add_argument("--first-name", help="Krstné meno fyzickej osoby.")
+    overview.add_argument("--name", help="Celé meno alebo názov právnickej osoby.")
     overview.add_argument("--ico")
     overview.add_argument("--birth-date")
     overview.add_argument("--ku")
@@ -144,9 +149,7 @@ def with_cache(args: argparse.Namespace) -> dict[str, Any]:
                 result["data"] = compact(result["data"])
             return result
         ico = osoba.norm_ico(args.ico)
-        want = osoba.tokens(args.name or "")
-        if ico is None and not want:
-            raise KatasterError("invalid_input", "Zadajte --name alebo --ico.")
+        want = osoba.overview_tokens(args.surname, args.first_name, args.name, ico)
         result = osoba.overview(
             SimpleNamespace(osoby=cache),
             want,
@@ -186,6 +189,21 @@ async def mcp_command(args: argparse.Namespace, data_dir: Path) -> dict[str, Any
         server.app_state.quota.db.close()
 
 
+def read_quota(limits: Path) -> dict[str, Any]:
+    day = today()
+    cap = PUBLIC_POLICY.owners_daily_hard
+    state = limits / "stav.sqlite"
+    used = 0
+    if state.exists():
+        try:
+            with closing(sqlite3.connect(f"{state.resolve().as_uri()}?mode=ro", uri=True)) as db:
+                if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='kvota'").fetchone():
+                    used = db.execute("SELECT COUNT(*) FROM kvota WHERE den=?", (day,)).fetchone()[0]
+        except sqlite3.Error as error:
+            raise KatasterError("unavailable", "Stav dennej kvóty sa nepodarilo prečítať.") from error
+    return {"den": day, "pouzite": used, "limit": cap, "zostava": max(0, cap - used)}
+
+
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "backup":
         from .backup import execute as backup_execute
@@ -196,6 +214,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
         return remote_execute(args)
     if args.command == "doctor":
+        limits = default_limits_dir()
         return Envelope().ok(
             {
                 "version": __version__,
@@ -204,6 +223,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                 "auth": "not_required",
                 "network_checked": False,
                 "data_dir": str(args.data_dir),
+                "limits_dir": str(limits),
+                "kvota_vlastnici": read_quota(limits),
             }
         )
     if args.command == "ku":
