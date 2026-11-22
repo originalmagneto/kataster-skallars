@@ -105,3 +105,24 @@ def test_concurrent_clients_reserve_only_one_remaining_slot(tmp_path):
     with ThreadPoolExecutor(max_workers=2) as pool:
         assert sorted(pool.map(lookup, (0, 1))) == ["limit_reached", "ok"]
     assert all(client.quota.used() == 1 for client in clients)
+
+
+def test_smoke_live_uses_shared_limits_with_temporary_data(tmp_path, monkeypatch):
+    from kataster_mcp import server
+
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
+    from smoke_server import build
+
+    account_limits = tmp_path / "account-limits"
+    monkeypatch.setattr(server, "default_limits_dir", lambda: account_limits)
+    smoke = tmp_path / "smoke"
+    state = build("--live", smoke).app_state
+    try:
+        assert state.limits_dir == account_limits
+        assert state.data_dir == smoke / "data"
+        with pytest.raises(SystemExit):
+            build("--invalid", smoke)
+    finally:
+        state.cache.db.close()
+        state.osoby.db.close()
+        state.quota.db.close()

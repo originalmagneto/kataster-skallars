@@ -122,6 +122,8 @@ def test_limits_and_safe_discovery(remote):
     tools = {t["name"]: t for t in result["result"]["tools"]}
     assert "out_dir" not in tools["kataster_mapa"]["inputSchema"]["properties"]
     assert "path" not in tools["kataster_lv_import"]["inputSchema"]["properties"]
+    description = tools["kataster_lv_import"]["description"]
+    assert "`jednotky`" in description and "`jednotka`" in description
     assert "data_dir" not in json.dumps(call(client, "kataster_status", {}))
 
 

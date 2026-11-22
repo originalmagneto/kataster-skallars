@@ -1,5 +1,7 @@
 # Vydania a izolovaná obnova
 
+Kataster 0.13.1 dopĺňa do opisu `kataster_lv_import` význam polí `jednotky` a `jednotka`. Na vzdialenom MCP sprístupní podrobnosti parameter `full=true`. Offline regresný test overuje, že režim `--live` testovacieho skriptu používa spoločné limity účtu aj pri dočasnom dátovom adresári.
+
 Kataster 0.13.0 zachováva pôvodné chyby nástrojov v lokálnom aj vzdialenom CLI. Dávkový import vracia stav tiarch a varovania pre každý LV. Pri užšom vstupe ponechá uloženú kópiu a uvedie počty chýbajúcich položiek v `ulozenie.ubudlo`. Plugin 0.3.1 aktualizuje návod k týmto výsledkom.
 
 Kataster 0.12.0 zobrazuje v príkaze `doctor` dnešnú spoločnú kvótu vlastníkov. V poli `kvota_vlastnici` sú deň, počet využitých parciel, denný limit a zostávajúci počet. Prehľad osoby prijíma aj samostatné parametre `--surname` a `--first-name`.
