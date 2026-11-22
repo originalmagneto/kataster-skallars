@@ -1,5 +1,7 @@
 # Vydania a izolovaná obnova
 
+Kataster 0.13.0 zachováva pôvodné chyby nástrojov v lokálnom aj vzdialenom CLI. Dávkový import vracia stav tiarch a varovania pre každý LV. Pri užšom vstupe ponechá uloženú kópiu a uvedie počty chýbajúcich položiek v `ulozenie.ubudlo`. Plugin 0.3.1 aktualizuje návod k týmto výsledkom.
+
 Kataster 0.12.0 zobrazuje v príkaze `doctor` dnešnú spoločnú kvótu vlastníkov. V poli `kvota_vlastnici` sú deň, počet využitých parciel, denný limit a zostávajúci počet. Prehľad osoby prijíma aj samostatné parametre `--surname` a `--first-name`.
 
 Offline kontrola stdio spustí samostatný MCP proces s dočasnými dátami a kvótou. Napríklad `uv run --offline --frozen python scripts/smoke_stdio.py --offline kataster_status '{}'` overí spojenie aj volanie nástroja. V tomto režime transport odmietne všetky požiadavky na portál.

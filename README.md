@@ -1,4 +1,4 @@
-> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.5.0, upstream autorstvo a MIT licencia zachované.
+> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.13.0, upstream autorstvo a MIT licencia zachované.
 
 # Kataster SKALLARS
 
@@ -12,11 +12,27 @@ Distribúcia MCP + CLI odvodená od `braklo/kataster-mcp` (MIT).
 | aplikácia Claude, Cowork | vlastný konektor `https://mcp-kataster.aittorney.online/mcp` |
 | CLI `sk-kataster` (raz na počítač) | `uv tool install git+https://github.com/originalmagneto/kataster-skallars`, potom `sk-kataster --json remote login` |
 
+V Claude Code ho nainštaluješ príkazom `/plugin install kataster-skallars --marketplace originalmagneto/skallars-marketplace`.
+
 Remote MCP má rovnakých 11 nástrojov ako lokálny server. CLI je potrebné na nahratie lokálneho LV súboru
 (HTML/PDF) na remote server (`sk-kataster --json remote upload CESTA`); ostatné funguje aj bez neho.
 Prihlásenie je spoločný SKALLARS účet na `auth.aittorney.online`.
 
- Aktuálny lokálny pilot, inštalácia a hranice implementácie: [docs/local-pilot.md](docs/local-pilot.md). Nasleduje pôvodná upstream dokumentácia; jej inštalačné URL smerujú na upstream.
+## Lokálne CLI a import LV
+
+```sh
+sk-kataster --json doctor
+sk-kataster --json lv import '/cesta/priecinok-s-vypismi'
+sk-kataster --json person overview --surname 'Priezvisko' --first-name 'Meno'
+```
+
+`doctor` ukáže dnešnú spoločnú kvótu CLI a lokálneho MCP. Prehľad osoby vychádza z vlastných importov. Pri chybe nástroja vráti CLI nenulový návratový kód a JSON s poľami `chyba`, `zdroje` a `varovania`. Dôvod zistíš z `chyba.typ` a `chyba.sprava`.
+
+Pri importe priečinka má každý záznam v `data.lv` vlastné `tarchy`, `uplnost`, `varovania` a `ulozenie`. Prázdna alebo chýbajúca časť C dáva `unknown`. Hodnota `none` vyžaduje výslovné „Bez tiarch.“ a platí pre rozsah dodaného výpisu.
+
+Ak z nového vstupu ubudnú položky, `ulozenie.stav` zostane `preserved_existing` aj pri novšom dátume. Pole `ulozenie.ubudlo` uvedie počty chýbajúcich vlastníckych záznamov, parciel, stavieb, jednotiek a predtým prečítaných častí, pri ktorých nastal úbytok. Prehľad osôb ďalej používa pôvodný výpis. Úbytok sám osebe nepreukazuje zmenu vlastníctva.
+
+Ďalšie príklady obsahuje [návod pre lokálne CLI](docs/local-pilot.md). Nasleduje dokumentácia pôvodného upstreamu. Jej inštalačné URL smerujú na upstream.
 
 # kataster-mcp
 
@@ -112,8 +128,7 @@ pôdy, Národné lesnícke centrum, Ministerstvo pôdohospodárstva a rozvoja vi
 
 ## Stav
 
-Verzia 0.1. Otestované s Claude Code na Linuxe. Na Windows a macOS prechádzajú automatické testy, v bežnom používaní
-to zatiaľ overené nie je; skúsenosti uvítame v issues.
+Testy SKALLARS bežia na Linuxe, macOS a Windowse s Pythonom 3.12 a 3.14. História zmien je v [prehľade vydaní](docs/releases.md).
 
 ## Chyby a návrhy
 

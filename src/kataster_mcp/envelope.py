@@ -27,6 +27,20 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+def tool_error_envelope(text: str, fallback: str = "invalid_input") -> dict:
+    """The SDK may prefix a domain error with the name of the tool that raised it."""
+    payload = text
+    if text.startswith("Error executing tool "):
+        _, _, payload = text.partition(": ")
+    try:
+        result = json.loads(payload)
+    except ValueError:
+        result = None
+    if isinstance(result, dict) and isinstance(result.get("chyba"), dict):
+        return {"zdroje": [], "varovania": [], **result}
+    return {"chyba": {"typ": fallback, "sprava": text}, "zdroje": [], "varovania": []}
+
+
 class KatasterError(Exception):
     def __init__(self, kind: str, message: str, *, coverage: Any = None, details: Any = None,
                  navod: list[str] | None = None):

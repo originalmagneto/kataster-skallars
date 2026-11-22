@@ -12,7 +12,7 @@ import httpx2
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-from .envelope import Envelope, KatasterError
+from .envelope import Envelope, KatasterError, tool_error_envelope
 from . import cli_auth
 
 
@@ -71,10 +71,8 @@ async def mcp_request(args: argparse.Namespace, headers: dict[str, str]) -> dict
                     )
                 result = await session.call_tool(args.name, arguments)
                 if result.is_error:
-                    raise KatasterError(
-                        "unavailable",
-                        "\n".join(c.text for c in result.content if hasattr(c, "text")),
-                    )
+                    text = "\n".join(c.text for c in result.content if hasattr(c, "text"))
+                    return tool_error_envelope(text, fallback="unavailable")
                 return result.structured_content or json.loads(result.content[0].text)
 
 

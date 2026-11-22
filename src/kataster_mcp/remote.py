@@ -98,19 +98,12 @@ def remote_tools(server, directory: Path, *, oauth: bool = False) -> None:
         if len(raw) > MAX_UPLOAD:
             raise ToolError("Súbor prekračuje limit.")
         data = await parse_upload(raw)
-        _, saved = lv.store_import(server.app_state.osoby, data, [f"upload:{file_id}"])
-        data["ulozenie"] = {"stav": "stored" if saved else "preserved_existing"}
+        _, report = lv.store_import(server.app_state.osoby, data, [f"upload:{file_id}"])
+        data["ulozenie"] = report
         env = Envelope()
         env.source(lv.IMPORT, f"upload:{file_id}", oficialny=False, z_cache=False)
-        env.warn(
-            "Rozsah výpisu nie je overený ako úplný. Chýbajúca časť C nepotvrdzuje neprítomnosť tiarch."
-        )
-        if data.get("jednotky_poznamka"):
-            env.warn(data["jednotky_poznamka"])
-        if not saved:
-            env.warn(
-                "Uložený výpis má novší dátum alebo širší rozsah. Výsledok opisuje vstup, prehľad používa pôvodný výpis."
-            )
+        for note in lv.document_warnings(data):
+            env.warn(note)
         return env.ok(data if full else compact(data))
 
     @server.tool()

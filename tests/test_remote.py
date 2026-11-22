@@ -384,3 +384,22 @@ def test_oauth_tenant_startup_failure_can_retry(tmp_path, monkeypatch):
         monkeypatch.setattr(app, "run_tenant", original)
         result = call(client, "kataster_status", {}, "synthetic-oauth")
         assert json.loads(result["content"][0]["text"])["data"]["auth"] == "oauth"
+
+
+def test_remote_compact_import_reports_losses_and_empty_c(remote):
+    client, _ = remote
+    original = (FIX / "lv_vypis_anon.html").read_text(encoding="utf-8")
+
+    def import_document(text):
+        upload = client.post("/uploads", headers={**headers(), "Content-Type": "text/html"},
+                             content=text.encode("utf-8"))
+        assert upload.status_code == 201
+        response = call(client, "kataster_lv_import", {"file_id": upload.json()["file_id"]})
+        assert not response.get("isError")
+        return json.loads(response["content"][0]["text"])
+
+    assert import_document(original)["data"]["ulozenie"]["stav"] == "stored"
+    out = import_document(original.replace("Bez tiarch.", "").replace("6.10.2026", "7.10.2026"))
+    assert out["data"]["tarchy"] == "unknown"
+    assert out["data"]["ulozenie"] == {"stav": "preserved_existing", "ubudlo": {"casti": 1}}
+    assert any("časť C" in note for note in out["varovania"])
