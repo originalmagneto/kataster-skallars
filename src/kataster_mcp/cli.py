@@ -183,6 +183,7 @@ async def mcp_command(args: argparse.Namespace, data_dir: Path) -> dict[str, Any
         await server.app_state.http.aclose()
         server.app_state.cache.db.close()
         server.app_state.osoby.db.close()
+        server.app_state.quota.db.close()
 
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
