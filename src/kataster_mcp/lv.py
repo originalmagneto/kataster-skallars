@@ -89,45 +89,78 @@ def _rank(data: dict) -> tuple:
     return date, data.get("zdroj_typ") != "nahlad_lv"
 
 
-def can_replace(candidate: dict, previous: dict) -> bool:
-    """Conservative local-cache selection; a shrinking scope needs explicit review."""
-    if _rank(candidate) < _rank(previous):
-        return False
-    new, old = candidate.get("uplnost", {}), previous.get("uplnost", {})
-    if new.get("rozsah") == "partial" and old.get("rozsah") != "partial":
-        return False
-    for part in ("cast_a", "cast_b", "cast_c"):
-        if old.get(part) == "read" and new.get(part) != "read":
-            return False
+def replacement_decision(candidate: dict, previous: dict) -> tuple[bool, dict[str, int]]:
+    """Compare the same identities as the cache selection policy, counting only missing entries."""
     def owner_key(owner: dict) -> tuple:
         unit = owner.get("jednotka") or {}
         return tuple(" ".join((owner.get(k) or "").casefold().split())
                      for k in ("meno", "datum_narodenia", "ico")) + tuple(
             unit.get(k) for k in ("druh", "vchod", "cislo", "supisne_cislo"))
 
-    before_owners = {owner_key(o) for o in previous["cast_b"]["vlastnici"]}
-    after_owners = {owner_key(o) for o in candidate["cast_b"]["vlastnici"]}
-    if not before_owners <= after_owners:
-        return False
+    old, new = previous.get("uplnost", {}), candidate.get("uplnost", {})
+    before = {owner_key(o) for o in previous["cast_b"]["vlastnici"]}
+    after = {owner_key(o) for o in candidate["cast_b"]["vlastnici"]}
+    counts = {
+        "vlastnici": len(before - after),
+        "casti": sum(old.get(p) == "read" and new.get(p) != "read" for p in ("cast_a", "cast_b", "cast_c")),
+    }
     for key, fields in (("cast_a", ("register", "cislo")), ("stavby", ("supisne_cislo", "parcela")),
                         ("jednotky", ("druh", "vchod", "cislo", "supisne_cislo"))):
         before = {tuple(row.get(k) for k in fields) for row in previous.get(key, [])}
         after = {tuple(row.get(k) for k in fields) for row in candidate.get(key, [])}
-        if not before <= after:
-            return False
-    return True
+        counts["parcely" if key == "cast_a" else key] = len(before - after)
+    missing = {key: count for key, count in counts.items() if count}
+    narrower = new.get("rozsah") == "partial" and old.get("rozsah") != "partial"
+    return not missing and not narrower and _rank(candidate) >= _rank(previous), missing
 
 
-def store_import(cache: Cache, data: dict, names: list[str]) -> tuple[float, bool]:
-    """Select under a SQLite write lock, preserving the old timestamp when rejected."""
+def can_replace(candidate: dict, previous: dict) -> bool:
+    return replacement_decision(candidate, previous)[0]
+
+
+def store_import(cache: Cache, data: dict, names: list[str]) -> tuple[float, dict]:
+    """Select and compare under one write lock. A rejected import keeps its predecessor's timestamp."""
     key = f"{ku_code(data['hlavicka'].get('Katastrálne územie', ''))}|{data['lv']}"
     with cache.db:
         cache.db.execute("BEGIN IMMEDIATE")
         previous = cache.get(IMPORT, LV_VER, key, PERSONAL_TTL)
-        if previous and not can_replace(data, previous[0]["lv"]):
-            return previous[1], False
+        if previous:
+            replace, missing = replacement_decision(data, previous[0]["lv"])
+            if not replace:
+                report = {"stav": "preserved_existing"}
+                if missing:
+                    report["ubudlo"] = missing
+                return previous[1], report
         ts = cache.put(IMPORT, LV_VER, key, {"zdroj": names[0], "subory": names, "lv": data})
-    return ts, True
+    return ts, {"stav": "stored"}
+
+
+def document_warnings(data: dict) -> list[str]:
+    """Describe this input even if a different copy remains in the cache."""
+    notes = []
+    coverage = data["uplnost"]
+    missing = [part[-1].upper() for part in ("cast_a", "cast_b", "cast_c") if coverage.get(part) == "missing"]
+    if missing:
+        notes.append(f"V dokumente chýbajú časti {', '.join(missing)}.")
+    if data["tarchy"] == "unknown":
+        notes.append("Chýbajúca alebo neprečítaná časť C nepotvrdzuje neprítomnosť tiarch.")
+    if coverage.get("rozsah") == "partial":
+        notes.append("Čiastočný výpis zachytáva iba vybrané položky.")
+    if data.get("jednotky_poznamka"):
+        notes.append(data["jednotky_poznamka"])
+    if data.get("stavby_neprecitane"):
+        notes.append("Výpis uvádza stavby, ktoré sa nepodarilo prečítať. Overte ich v náhľade toho istého LV.")
+    report = data.get("ulozenie", {})
+    if report.get("stav") == "preserved_existing":
+        notes.append("Import nenahradil uložený výpis vzhľadom na dátum, druh alebo rozsah vstupu. "
+                     "Prehľad osôb naďalej používa pôvodný záznam.")
+        if report.get("ubudlo"):
+            labels = {"vlastnici": "vlastníci", "parcely": "parcely", "stavby": "stavby",
+                      "jednotky": "jednotky", "casti": "prečítané časti"}
+            counts = ", ".join(f"{labels[k]} ({n})" for k, n in report["ubudlo"].items())
+            notes.append(f"Oproti uloženému výpisu ubudli položky v kategóriách {counts}.")
+    notes.append("Rozsah dokumentu nie je overený ako úplný.")
+    return [f"LV {data['lv']}: {note}" for note in notes]
 
 
 def _summary(ku: str, data: dict, files: list[str], ts: float) -> dict:
@@ -137,7 +170,7 @@ def _summary(ku: str, data: dict, files: list[str], ts: float) -> dict:
         "udaje_platne_k": data["hlavicka"].get("Údaje platné k"), "parcely": len(data.get("cast_a") or []),
         "stavby": len(data.get("stavby") or []),
         **({"jednotky": data["jednotky_pocet"]} if "jednotky_pocet" in data else {}),
-        "vlastnici": len(b.get("vlastnici") or []), "importovane": ts_iso(ts),
+        "vlastnici": len(b.get("vlastnici") or []), "tarchy": data["tarchy"], "importovane": ts_iso(ts),
     }
 
 
@@ -241,7 +274,7 @@ def import_lv(cache: Cache, *, path: str | None = None, paths: list[str] | None 
             key = (ku_code(data["hlavicka"].get("Katastrálne územie", "")), data["lv"])
             if key in best:
                 old, names = best[key]
-                if can_replace(data, old) and _rank(data) >= _rank(old):
+                if can_replace(data, old):
                     best[key] = (data, [origin, *names])
                 else:
                     names.append(origin)
@@ -249,27 +282,19 @@ def import_lv(cache: Cache, *, path: str | None = None, paths: list[str] | None 
                 best[key] = (data, [origin])
         out = []
         for (ku, lv_no), (data, names) in best.items():
-            if data.get("jednotky_poznamka"):
-                env.warn(data["jednotky_poznamka"])
-            if data.get("stavby_neprecitane"):
-                env.warn(f"LV {lv_no}: the extract lists buildings (stavby) that could not be read; "
-                         "the LV preview (Náhľad LV) of the same LV is read reliably.")
-            ts, saved = store_import(cache, data, names)
-            data["ulozenie"] = {"stav": "stored" if saved else "preserved_existing"}
-            if not saved:
-                env.warn(f"LV {lv_no}: import nenahradil uložený výpis pre starší/neznámy dátum alebo menší "
-                         "rozsah. Výsledok opisuje vstup; prehľad osôb naďalej používa predchádzajúci výpis. "
-                         "Zmenu rozsahu treba preveriť aj pri novšom dátume.")
-            if data.get("tarchy") == "unknown":
-                env.warn(f"LV {lv_no}: časť C chýba alebo nebola prečítaná; neprítomnosť tiarch nie je potvrdená.")
-            env.warn("Rozsah dokumentu nie je overený ako úplný; prečítané časti nedokazujú úplnosť výpisu.")
-            env.source(IMPORT, names[0], oficialny=False, z_cache=False)
-            env.warn("Informative extract ('Výpis je nepoužiteľný na právne úkony'); data valid as of "
-                     + data["hlavicka"].get("Údaje platné k", "?") + ".")
+            ts, report = store_import(cache, data, names)
+            data["ulozenie"] = report
+            notes = document_warnings(data)
+            valid_date = data["hlavicka"].get("Údaje platné k", "?")
+            notes.append(f"LV {lv_no}: informatívny výpis nepoužiteľný na právne úkony. Údaje platné k {valid_date}.")
+            for note in notes:
+                env.warn(note)
+            saved = report["stav"] == "stored"
+            env.source(IMPORT, names[0], oficialny=False, z_cache=False, cas=ts_iso(ts) if saved else None)
             summary = _summary(ku, data, names, ts)
             if not saved:
                 summary["importovane"] = None
-            out.append({**summary, "ulozenie": data["ulozenie"], "uplnost": data["uplnost"]})
+            out.append({**summary, "ulozenie": report, "uplnost": data["uplnost"], "varovania": notes})
         if single:
             return env.ok(next(iter(best.values()))[0])
         if not out:

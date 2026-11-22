@@ -115,9 +115,10 @@ async def test_reduced_owner_table_does_not_replace_existing(tmp_path):
     body, count = re.subn(r"<tr>\s*<td[^>]*>2</td>.*?</tr>", "", body, flags=re.S)
     candidate = head + "ČASŤ B:" + body
     assert count == 1
+    candidate = candidate.replace("6.10.2026", "7.10.2026")
     out = await _call(server, "kataster_lv_import", {"html": candidate})
     assert server.app_state.osoby.get(IMPORT, LV_VER, "871541|1926", None) == before
-    assert out["data"]["ulozenie"]["stav"] == "preserved_existing"
+    assert out["data"]["ulozenie"] == {"stav": "preserved_existing", "ubudlo": {"vlastnici": 1}}
 
 
 @pytest.mark.anyio
@@ -142,3 +143,26 @@ async def test_batch_source_points_to_selected_document(tmp_path):
     stored = server.app_state.osoby.get(IMPORT, LV_VER, "871541|1926", None)[0]
     assert stored["lv"]["zdroj_typ"] == "vypis_lv_html"
     assert stored["zdroj"] == extract
+
+
+@pytest.mark.anyio
+async def test_batch_reports_each_input_and_preserves_cached_scope(tmp_path):
+    server = _offline(tmp_path)
+    original = (FIX / "lv_vypis_anon.html").read_text(encoding="utf-8")
+    await _call(server, "kataster_lv_import", {"html": original})
+    previous = server.app_state.osoby.get(IMPORT, LV_VER, "871541|1926", None)
+    newer = original.replace("6.10.2026", "7.10.2026").replace(">503<", ">nečitateľné<")
+    partial = newer.replace("VÝPIS Z LISTU", "ČIASTOČNÝ VÝPIS Z LISTU").split("ČASŤ C:")[0]
+    first, second = tmp_path / "partial.html", tmp_path / "other.html"
+    first.write_text(partial, encoding="utf-8")
+    second.write_text(original.replace("1926", "1927"), encoding="utf-8")
+    out = await _call(server, "kataster_lv_import", {"paths": [str(first), str(second)]})
+    narrow, complete = out["data"]["lv"]
+    assert narrow["ulozenie"] == {"stav": "preserved_existing", "ubudlo": {"parcely": 1, "casti": 1}}
+    assert narrow["importovane"] is None and narrow["tarchy"] == "unknown"
+    assert complete["tarchy"] == "none" and complete["ulozenie"] == {"stav": "stored"}
+    notes = " ".join(narrow["varovania"]).casefold()
+    assert "čiastočný" in notes and "časť c" in notes and "parcely" in notes
+    assert set(narrow["varovania"]) <= set(out["varovania"])
+    assert "čiastočný" not in " ".join(complete["varovania"]).casefold()
+    assert server.app_state.osoby.get(IMPORT, LV_VER, "871541|1926", None) == previous
