@@ -1,4 +1,4 @@
-> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.13.0, upstream autorstvo a MIT licencia zachované.
+> SKALLARS fork: [lokálny pilot](docs/local-pilot.md), [remote na Dokploy](docs/remote-pilot.md), [spoločné OAuth prihlásenie](docs/oauth.md). Verzia 0.13.1, upstream autorstvo a MIT licencia zachované.
 
 # Kataster SKALLARS
 

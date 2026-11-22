@@ -86,6 +86,8 @@ def test_discovery_only_emits_names_until_tool_is_requested(tmp_path):
     assert "inputSchema" not in result.stdout
     result, out = run_cli(tmp_path, "tools", "kataster_lv_import")
     assert result.returncode == 0 and out["data"]["name"] == "kataster_lv_import"
+    description = out["data"]["description"]
+    assert "`jednotky`" in description and "`jednotka`" in description
 
 
 def test_standalone_data_dir_is_separate_and_configurable(monkeypatch, tmp_path):
