@@ -22,7 +22,7 @@ def offline(monkeypatch):
         return {"ku_kod": "800001", "register": "E", "cislo": cislo, "oznacenie": "E " + cislo,
                 "vymera_m2": 1234, "geometria": GEOMETRY}
 
-    async def background(http, frame, podklad, env):
+    async def background(http, frame, podklad, env, stats):
         return Image.new("RGBA", (frame.width, frame.height), (255, 255, 255, 255))
 
     monkeypatch.setattr(server, "find_parcel", find_parcel)
@@ -74,3 +74,19 @@ def test_remote_map_rejects_oversized_output(remote, offline, monkeypatch):
     result = call(client, "kataster_mapa", REQUEST)
     assert result.get("isError")
     assert "príliš veľká" in json.dumps(result, ensure_ascii=False)
+
+
+@pytest.mark.parametrize("extra", [0, 1])
+def test_remote_combined_html_limit_in_utf8_bytes(remote, offline, monkeypatch, extra):
+    client, _ = remote
+    limit = 8 * 1024**2
+    html = "á" * (limit // 2 - 1)
+    monkeypatch.setattr(render, "html", lambda *args: html)
+    monkeypatch.setattr(render, "geojson", lambda *args: "{}" + " " * extra)
+    result = call(client, "kataster_mapa", {**REQUEST, "format": ["html", "geojson"]})
+    if extra:
+        assert result.get("isError") and "príliš veľká" in result["content"][0]["text"]
+    else:
+        assert not result.get("isError")
+        files = json.loads(result["content"][0]["text"])["data"]["subory"]
+        assert sum(f["bajty"] for f in files) == limit
