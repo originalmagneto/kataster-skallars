@@ -83,7 +83,7 @@ class Http:
             if wait > 0:
                 await self._sleep(wait)
 
-    async def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
+    async def _request(self, method: str, url: str, *, form_session: httpx.Cookies | None = None, **kwargs) -> httpx.Response:
         host = urlsplit(url).hostname or ""
         self.guard(host)
         async with self._lock:
@@ -91,11 +91,18 @@ class Http:
             async with hold as since_other:
                 self.guard(host)
                 await self._wait_turn(host, since_other)
+                client = self.client
+                previous_jar = client.cookies.jar
                 try:
-                    resp = await self.client.request(method, url, **kwargs)
+                    if form_session is not None:
+                        # The shared client is locked. Only this lookup carries the JSF session across hops.
+                        client.cookies = form_session.jar
+                    resp = await client.request(method, url, **kwargs)
                 except httpx.HTTPError as e:
                     raise KatasterError("unavailable", f"{host}: {type(e).__name__}: {e}") from e
                 finally:
+                    if form_session is not None:
+                        client.cookies = previous_jar
                     self._last[host] = self._clock()
                 self._check(resp, host)
                 return resp
@@ -106,6 +113,24 @@ class Http:
     async def post(self, url: str, data: dict, headers: dict | None = None) -> httpx.Response:
         """Form POST under the same lock, pacing and block detection as get(); redirects are followed."""
         return await self._request("POST", url, data=data, headers=headers)
+
+    async def portal_page(self, url: str, cookies: httpx.Cookies, *, params: dict | None = None,
+                          form: dict | None = None, headers: dict | None = None) -> httpx.Response:
+        """Keep every JSF hop on the portal and under the shared pacing and block checks."""
+        method = "POST" if form is not None else "GET"
+        for _ in range(6):
+            target = httpx.URL(url)
+            if target.scheme != "https" or target.host != ESKN_HOST or target.port is not None or target.userinfo:
+                raise KatasterError("parser_drift", "Unexpected destination for the ESKN building lookup.")
+            response = await self._request(method, url, form_session=cookies, params=params, data=form,
+                                           headers=headers, follow_redirects=False)
+            redirect = response.next_request
+            if redirect is None:
+                return response
+            method, url, params = redirect.method, str(redirect.url), None
+            if method == "GET":
+                form, headers = None, None
+        raise KatasterError("unavailable", "Too many redirects during the ESKN building lookup.")
 
     async def get_json(self, url: str, params: dict | None = None):
         resp = await self.get(url, params)

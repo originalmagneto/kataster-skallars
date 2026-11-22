@@ -82,7 +82,7 @@ def test_packager_rejects_symlinks_and_unapproved_sources():
 @pytest.mark.anyio
 async def test_extracted_local_package_stdio_from_fresh_cwd(packages, tmp_path):
     artifact = tmp_path / "extracted"
-    with zipfile.ZipFile(packages["kataster-skallars-local-0.2.0"]) as archive:
+    with zipfile.ZipFile(next(path for name, path in packages.items() if name.startswith("kataster-skallars-local-"))) as archive:
         archive.extractall(artifact)
     outside = tmp_path / "outside"
     outside.mkdir()
