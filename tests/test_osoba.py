@@ -230,3 +230,15 @@ def test_buildings_in_extract_rows():
                               "pravny_vztah_k_pozemku": rows[-6][1]}]
     odd = parse_rows(base + [["Stavby"], ["Súpisné č.", "na parc. č."], ["45 12/3"], ["ČASŤ B"]])
     assert odd["stavby"] == [] and odd["stavby_neprecitane"]
+
+
+@pytest.mark.anyio
+async def test_person_guide_says_municipality_is_not_ku(tmp_path):
+    s = create_server(PUBLIC_POLICY, data_dir=tmp_path, limits_dir=tmp_path / "limity")
+    town = (await _call(s, "kataster_osoba_navod", {"ku": "812315", "priezvisko": "Vlastník"}))["data"]  # Dolný Kubín
+    others = {o["kod"] for o in town["ine_ku_obce"]}
+    assert "812331" in others and "812315" not in others  # Veľký Bysterec is part of the town
+    step = next(x for x in town["navod"] if x.startswith("Obec nie je to isté"))
+    assert "Veľký Bysterec (812331)" in step and "susednej obce" in step
+    village = (await _call(s, "kataster_osoba_navod", {"ku": "871541", "priezvisko": "Vlastník"}))["data"]
+    assert village["ine_ku_obce"] == [] and any("susednej obce" in x for x in village["navod"])

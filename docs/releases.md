@@ -1,7 +1,6 @@
 # Vydania a izolovaná obnova
 
-Kataster backend/CLI má verziu 0.9.1, Auth 0.2.0. Pluginové manifesty (0.2.0) majú
-samostatný životný cyklus a táto zmena ich nemení.
+Kataster backend a CLI 0.10.0 sprístupňujú súpisné čísla stavieb na parcele, ich voliteľný detail a zoznam ostatných katastrálnych území obce. Plugin 0.3.0 dopĺňa postup overenia LV stavby. Auth má verziu 0.2.0.
 
 Lokálne CLI a stdio MCP od verzie 0.9.0 zdieľajú v rámci účtu dennú kvótu, blokáciu portálu a odstup medzi požiadavkami. Cestu k spoločnému stavu ukáže `sk-kataster --json call kataster_status '{}'` v poli `limity_dir`. Pri otvorení starého dátového adresára sa prenesie jeho dnešná kvóta a platná blokácia. Remote služba používa spoločné limity vo svojom dátovom zväzku.
 

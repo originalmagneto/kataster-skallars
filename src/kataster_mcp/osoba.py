@@ -153,6 +153,7 @@ def register(mcp, app) -> None:
         The server never searches by person and makes no network request here: the user searches in the
         browser (the portal's invisible CAPTCHA lets a person through), opens the LV previews, saves them into
         one folder, then kataster_lv_import reads the folder and kataster_osoba_prehlad builds the overview.
+        ine_ku_obce lists the other cadastral units in the selected municipality.
         Walk the user through the steps ONE AT A TIME (wait until a step is done), do not paste the whole list.
         """
         env = Envelope()
@@ -161,7 +162,7 @@ def register(mcp, app) -> None:
             unit = ku_mod.resolve(ku)
             env.source("eskn_vyhladavanie", navod.SEARCH_URL, oficialny=True, z_cache=False)
             return env.ok({
-                "ku": unit, "typ": typ,
+                "ku": unit, "typ": typ, "ine_ku_obce": navod.other_units(unit),
                 "navod": navod.person(unit, typ, priezvisko, meno, nazov, ico),
                 "poznamka": "The search result lists entries person × LV; namesakes are told apart by date of birth "
                             "and address (natural persons) or IČO (legal persons). CAPTCHA and any login are "

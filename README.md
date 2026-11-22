@@ -35,12 +35,12 @@ bonitu pôdy, úradnú hodnotu, LPIS, záplavové územia, ochranu prírody, les
 |---|---|
 | `kataster_ku` | katastrálne územie podľa názvu alebo kódu (obec, okres) |
 | `kataster_parcela` | parcelu registra C alebo E podľa čísla alebo súradníc: výmera, hranica, referenčný bod |
-| `kataster_vlastnici` | vlastníkov a podiely jednej zadanej parcely a číslo listu vlastníctva |
+| `kataster_vlastnici` | vlastníkov a podiely parcely, jej LV a súpisné čísla stavieb. S `detail_stavieb: true` aj samostatný LV stavby, jej druh a vlastníkov. Každý nový detail stavby čerpá dennú kvótu |
 | `kataster_vrstvy` | tematické údaje o parcele (zoznam nižšie), pri plošných vrstvách aj podiel na výmere |
 | `kataster_skupina` | rozbor viacerých parciel: celková výmera, spoločné hranice, súvislé celky, susedia |
 | `kataster_mapa` | mapu parcely ako PNG, HTML (Leaflet), GeoJSON alebo KML, bez osobných údajov |
 | `kataster_lv` | odkaz na výpis z listu vlastníctva na portáli ESKN (výpis si otvoríte sami) |
-| `kataster_osoba_navod` | postup krok za krokom, ako si v oficiálnom vyhľadávaní portálu ESKN nájsť listy vlastníctva osoby a uložiť ich náhľady (server pri tom na portál nevolá) |
+| `kataster_osoba_navod` | postup krok za krokom, ako si v oficiálnom vyhľadávaní portálu ESKN nájsť listy vlastníctva osoby a uložiť ich náhľady (server pri tom na portál nevolá). Uvádza aj názvy a kódy ostatných katastrálnych území tej istej obce |
 | `kataster_lv_import` | načítanie výpisu LV alebo náhľadu LV, ktorý ste si uložili (HTML alebo PDF); aj celý priečinok naraz |
 | `kataster_osoba_prehlad` | prehľad parciel a podielov jednej osoby zložený z náhľadov LV, ktoré ste si uložili; bez dotazu na portál |
 | `kataster_status` | verziu, limity a dnešné využitie kvóty |
